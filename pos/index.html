@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Karel's Flowers — POS</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- ── Login screen ── -->
+  <div id="login-screen" class="login-screen">
+    <form id="login-form" class="login-card">
+      <h1>🌹 Karel's Flowers</h1>
+      <p class="login-subtitle">Staff sign in</p>
+      <label>
+        Staff
+        <select id="login-staff" required></select>
+      </label>
+      <label>
+        PIN
+        <input id="login-pin" type="password" inputmode="numeric" autocomplete="off" required />
+      </label>
+      <button type="submit">Sign in</button>
+      <p id="login-error" class="error-text" hidden></p>
+    </form>
+  </div>
+
+  <!-- ── App shell ── -->
+  <div id="app-shell" class="app-shell" hidden>
+    <nav id="sidebar" class="sidebar"></nav>
+    <div class="app-main">
+      <header class="topbar">
+        <button id="menu-toggle" class="menu-toggle" aria-label="Toggle menu">☰</button>
+        <div class="topbar-title" id="page-title">Dashboard</div>
+        <div class="topbar-staff">
+          <span id="staff-name"></span>
+          <button id="logout-btn" class="link-btn">Sign out</button>
+        </div>
+      </header>
+      <main id="content" class="content"></main>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

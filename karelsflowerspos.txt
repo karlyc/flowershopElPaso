@@ -1,0 +1,264 @@
+﻿Flowershop store point of sales system Website
+
+Sections
+-Dashboard
+* Displays today’s deliveries (displays order number, customer, recipient, product, delivery times)(display by earliest delivery time)
+* Tomorrow’s deliveries (displays order number, customer, recipient, arrangement, delivery times)(display by earliest delivery time)
+* Tasks (Displays incompleted tasks for today or without set date)
+* Reminders(displays birthday and anniversary orders that were delivered two days before last year)(display customer, recipient and product)
+* Pending payments(displays orders that have not gone through the completed payment process)
+* Expenses(Name of expense, date of purchase, payment type(card, cash,check) amount) add button
+
+
+
+
+-Tasks
+* Add task
+   * Date created(autopopulated)
+   * Frequency(dropdown: one time, monthly,yearly)
+   * Due date(calendar selector)
+   * Task:(user input)
+   * Send to(drop down of other users)
+* Pending tasks(displays all pending tasks by dates)
+* Completed tasks (displays all completed tasks by date it was completed)
+
+
+-Create Order
+* Order number(created after submitting)
+* Delivery date(calendar picker)
+* Delivery time: drop down(at, before, after) and (user input) (AM/PM)
+* Customer: search bar(search by phone, or names) to select client or add customer button
+* Product search bar(can add multiple products, photo of product is visible when adding from my products)
+   * Select product(from products)
+   * Quick add product
+   * Allow to user input notes about the products
+* Occasion: Birthday, anniversary, funeral, graduation, love, other(if its for a funeral allow for option to add a banner and (user input color and message)
+* Message:
+   * Message (user Input)
+   * Signature: (user input) or anonymous(checkbox)
+* Delivery
+   * House/apt
+      * Name of recipient
+      * Phone number of recipient
+      * Address 
+      * Zip code
+      * Notes
+   * Business/work
+      * Name of recipient
+      * Phone number
+      * Name of business
+      * Recipient dept or position in the business
+      * Address
+      * Zip code
+      * Notes
+   * Pickup
+      * Customer will pick up (checkbox) or
+      * Name of person picking up (user input)
+
+
+* Payment
+   * Select payment type: card, cash,check ,zelle,cashapp
+   * Products amounts + delivery(dropdown of zipcodes with pricing or custom)+ tax(1.0825)= total
+   * Tax exempt checkbox
+      * If its checked then tax is 0
+
+
+* Delivery notification
+   * Email
+   * Whatsapp notification
+   * No notification
+
+
+* Assisted by: dropdown of users and pin request
+* Save order button
+* Display Receipt
+   * ORDER RECEIPT:(must contain)
+   * Shop info
+   * Order number
+   * Delivery date and time
+   * Customer: Name, Last Name, phone number
+   * Delivery info:
+   * Product: photo of products 
+   * (If its for a funeral and it includes a banner add banner info)
+   * (if there are product notes display product notes)
+   * Total(including delivery fee and tax)
+
+
+
+
+
+
+
+
+
+
+-Orders
+* Displays orders (From most oldest to newest)
+   * (Number, delivery date, client name, recipient, product, total) Status(making arrangement,pending delivery,completed) button (view), submit payment
+      * (view) Shows detailed view of order(shows screen of create order with submitted info) (edit option)
+      * (submit payment) 
+         * add photo proof of payment
+         * If its cash only ask for bill amounts and submit
+
+
+-Customers
+        
+* Phone: (primary identifier)
+* Second phone:
+* First Name:
+* Second Name:
+* Last Name:
+* Client since: When it was created(autopopulated)
+* Email:
+* Company(optional)
+* Notes:(optional)
+* How did you learn about us:
+* Client category(only visible in the system)
+   * silver(10+)
+   * Gold(20+)
+   * Diamond(30+)
+* Save client/ edit 
+
+
+-Deliveries
+* Can see all arrangements with pending delivery for that day(not orders with option “pickup”
+* Driver can see 
+   * Order number
+   * Delivery date
+   * Delivery time
+   * Customer: name, last name, phone
+   * Delivery info:
+   * Products:
+   * Button “Delivered”
+      * Write name of who received
+      * Add photo proof
+      * Submit and order will be marked as delivered
+
+
+-Making arrangements
+* List of orders that need to be “made” order by the closest delivery dates(taking into account the times for delivery as well)
+* Displays: order number, delivery date and time, customer name, product name, product photo, product recipe and notes
+* Button (completed)
+* Once button completed is clicked order is now in “pending delivery”
+
+
+
+
+-Categories
+* Display Categories(Name, Foto, visible, edit button)
+* Add
+   * Name
+   * Description
+   * Foto
+   * Visible(yes/no)
+   * Add/ remove products
+
+
+-Products
+        
+* Search bar(code,name or name of flower that is in recipe)
+* Display all products(Code,Name, foto, price, visible, edit button)
+* Add product
+   * Code
+   * Name
+   * Category(can be added to multiple categories)
+   * Photo(can add up to 3)
+   * Size in inches(length and width)
+   * Price
+   * Description
+   * Visible on site(yes/no yes predetermined)
+   * Product Recipe (add/remove/edit)
+      * Name of flower and quantity
+-Inventory
+* Search bar(code or name)
+* Display all inventory by category
+   * Edit( quantity)
+-Zip Codes
+
+
+* Display all zipcodes(number and price)(edit option/delete option)
+* Add option
+   * Number
+   * price
+
+
+
+
+-Admin
+* Payments(The admin must confirm every order has been paid but these process is only known to the manager and visible to the manager)
+   * Search bar: look up order and see if its in payment confirmed status
+   * Check payments: If the payment was “submitted” in the order section
+      * Display order receipt and payment proof (order to display by first: cash, card, zelle, applepay, check)
+      * For cash display order receipt and info
+      * Button (payment confirmed)
+   * Not submitted: Display orders of the day that don’t have a submitted payment
+      * Set reminder to check again(next day, one week, two weeks, one month)
+   * Pending payments:
+      * Display orders that don't have a submitted payment for longer than a day
+(reminders for not submitted payments should appear in dashboard under a task for admin and office, example: order number X: payment photo has not been received )
+* Daily report
+   * Report total money made for the day based on today’s sales
+
+
+* Monthly report
+   * Total money made based on total monthly sales
+      * Additionally divide by cash, card, zelle, applepay and check(show amounts collected for each without tax)
+      * Additionally show total tax amount for the month
+   * Display number of new clients
+   * Display number of top 3 products sold
+   * Display comparison of total orders placed this month vs last month
+   * Display monthly expenses(including expenses added in dashboard and “set expenses” pertaining the month in question)
+   * Display net profit margin and operating profit margin
+* Expenses
+   * Display set expenses (edit)
+   * Add expense
+      * Date(weekly,monthly, etc ), name, category(bills, payroll, rent,flowers, maintenance,marketing, misc, other),description, amount
+
+
+        
+* Add inventory
+   * Name
+   * Category(Bases, flowers, Ribbons, others)
+   * Size in inches(length and width)
+   * Select unit(piece,roll, box, bunch,bag)
+   * Units per purchase 
+   * Price 
+   * Unit price(get from price, units and units per purchase)
+   * Notes
+   * Provider(user input)
+
+
+* Shop info
+   * Logo
+   * Name 
+   * Address
+   * Website
+   * Phone number
+   * Phone number 2
+
+
+* Operational info:
+   * Tax: input tax amount
+   * Hours of operation
+
+
+
+
+* Users:
+   * Display users
+   * Add users
+      * Name
+      * Pin
+      * Role(admin, office, driver, florist)
+      * Edit/ (mark as not active)(not active suspends access)
+
+
+
+
+(system rules)
+Order status:making arrangement,pending delivery,completed
+Permissions: 
+Admin(has access to everything)
+Office(doesn’t have access to admin tab)
+Driver(has access to tasks, deliveries and making arrangements, inventory)
+Florist(has access to tasks, deliveries, making arrangements and inventory)

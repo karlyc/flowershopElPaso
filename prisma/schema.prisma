@@ -1,0 +1,353 @@
+// prisma/schema.prisma — Karel's Flowers POS
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Staff & permissions ──────────────────────────────────────────
+
+enum StaffRole {
+  ADMIN
+  OFFICE
+  FLORIST
+  DRIVER
+}
+
+model Staff {
+  id        String    @id @default(cuid())
+  name      String
+  pin       String // bcrypt hash
+  role      StaffRole @default(OFFICE)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  ordersAssisted Order[] @relation("AssistedBy")
+  tasksAssigned  Task[]  @relation("TaskAssignee")
+}
+
+// ── Clients ───────────────────────────────────────────────────────
+
+enum ClientTier {
+  REGULAR
+  SILVER
+  GOLD
+  DIAMOND
+}
+
+model Client {
+  id          String     @id @default(cuid())
+  phone       String     @unique
+  phone2      String?
+  firstName   String
+  secondName  String?
+  lastName    String
+  email       String?
+  company     String?
+  notes       String?
+  referral    String? // "How did you learn about us"
+  orderCount  Int        @default(0)
+  tier        ClientTier @default(REGULAR) // system-only, derived from orderCount
+  clientSince DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  orders Order[]
+}
+
+// ── Catalog ───────────────────────────────────────────────────────
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  photoUrl    String?
+  visible     Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  widthIn     Decimal? @db.Decimal(6, 1)
+  heightIn    Decimal? @db.Decimal(6, 1)
+  photo1Url   String?
+  photo2Url   String?
+  photo3Url   String?
+  visible     Boolean  @default(true)
+  categoryId  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category   Category?    @relation(fields: [categoryId], references: [id])
+  recipe     RecipeItem[]
+  orderItems OrderItem[]
+}
+
+enum InventoryCategory {
+  BASES
+  FLOWERS
+  RIBBONS
+  OTHERS
+}
+
+enum InventoryUnit {
+  PIECE
+  ROLL
+  BOX
+  BUNCH
+  BAG
+}
+
+model InventoryItem {
+  id               String            @id @default(cuid())
+  code             String?           @unique
+  name             String
+  category         InventoryCategory @default(OTHERS)
+  widthIn          Decimal?          @db.Decimal(6, 1)
+  heightIn         Decimal?          @db.Decimal(6, 1)
+  unit             InventoryUnit     @default(PIECE)
+  unitsPerPurchase Decimal           @default(1) @db.Decimal(10, 3)
+  price            Decimal           @db.Decimal(10, 2) // price per purchase (e.g. per box)
+  quantity         Decimal           @default(0) @db.Decimal(10, 3) // current stock, in units
+  provider         String?
+  notes            String?
+  photoUrl         String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  recipeOf RecipeItem[]
+}
+
+model RecipeItem {
+  id              String  @id @default(cuid())
+  productId       String
+  inventoryItemId String
+  quantity        Decimal @db.Decimal(10, 3)
+  notes           String?
+
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  @@unique([productId, inventoryItemId])
+}
+
+model ZipCode {
+  id        String   @id @default(cuid())
+  zip       String   @unique
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Orders ────────────────────────────────────────────────────────
+
+enum OrderStatus {
+  MAKING_ARRANGEMENT
+  PENDING_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING // not submitted yet
+  SUBMITTED // proof uploaded, awaiting admin confirmation
+  CONFIRMED // admin confirmed
+}
+
+enum PaymentType {
+  CARD
+  CASH
+  CHECK
+  ZELLE
+  CASHAPP
+}
+
+enum Occasion {
+  BIRTHDAY
+  ANNIVERSARY
+  FUNERAL
+  GRADUATION
+  LOVE
+  OTHER
+}
+
+enum DeliveryOption {
+  HOUSE
+  BUSINESS
+  PICKUP
+}
+
+enum DeliveryTimeType {
+  AT
+  BEFORE
+  AFTER
+}
+
+enum NotificationMethod {
+  EMAIL
+  WHATSAPP
+  NONE
+}
+
+model Order {
+  id          String @id @default(cuid())
+  orderNumber String @unique
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  // Delivery scheduling
+  deliveryDate     DateTime
+  deliveryTimeType DeliveryTimeType @default(AT)
+  deliveryTime     String // e.g. "2:30 PM"
+
+  // Occasion & message
+  occasion      Occasion @default(OTHER)
+  bannerColor   String? // funeral only
+  bannerMessage String? // funeral only
+  messageText   String?
+  messageFrom   String?
+  messageAnon   Boolean  @default(false)
+
+  // Delivery details
+  deliveryOption   DeliveryOption @default(HOUSE)
+  recipientName    String?
+  recipientPhone   String?
+  address          String?
+  zip              String?
+  businessName     String?
+  businessDept     String?
+  deliveryNotes    String?
+  pickupSelf       Boolean        @default(false)
+  pickupPersonName String?
+
+  // Payment
+  paymentType      PaymentType?
+  deliveryFee      Decimal       @default(0) @db.Decimal(10, 2)
+  subtotal         Decimal       @db.Decimal(10, 2)
+  taxExempt        Boolean       @default(false)
+  tax              Decimal       @default(0) @db.Decimal(10, 2)
+  total            Decimal       @db.Decimal(10, 2)
+  paymentStatus    PaymentStatus @default(PENDING)
+  paymentProofUrl  String?
+  cashBillBreakdown Json?        // { "20": 3, "10": 1, ... } — only for cash payments
+  paymentConfirmedAt DateTime?
+  paymentReminderAt  DateTime?   // next follow-up date set by admin when unsubmitted
+
+  // Notification
+  notifyVia NotificationMethod @default(NONE)
+
+  // Staff & status
+  assistedById String?
+  assistedBy   Staff?      @relation("AssistedBy", fields: [assistedById], references: [id])
+  orderStatus  OrderStatus @default(MAKING_ARRANGEMENT)
+
+  // Delivery confirmation
+  receivedByName String?
+  deliveryPhotoUrl String?
+  deliveredAt     DateTime?
+  assignedDriverId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+  tasks Task[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  productId  String?
+  customName String? // for quick-add items not in the catalog
+  quantity   Int      @default(1)
+  unitPrice  Decimal  @db.Decimal(10, 2)
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+}
+
+// ── Tasks ─────────────────────────────────────────────────────────
+
+enum TaskFrequency {
+  ONE_TIME
+  MONTHLY
+  YEARLY
+}
+
+model Task {
+  id          String        @id @default(cuid())
+  description String
+  frequency   TaskFrequency @default(ONE_TIME)
+  dueDate     DateTime?
+  completed   Boolean       @default(false)
+  completedAt DateTime?
+  orderId     String?
+  assignedToId String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  order      Order? @relation(fields: [orderId], references: [id])
+  assignedTo Staff? @relation("TaskAssignee", fields: [assignedToId], references: [id])
+}
+
+// ── Admin: expenses & shop settings ──────────────────────────────
+
+enum ExpenseCategory {
+  BILLS
+  PAYROLL
+  RENT
+  FLOWERS
+  MAINTENANCE
+  MARKETING
+  MISC
+  OTHER
+}
+
+enum ExpenseFrequency {
+  ONE_TIME
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model Expenditure {
+  id          String           @id @default(cuid())
+  name        String
+  category    ExpenseCategory  @default(OTHER)
+  frequency   ExpenseFrequency @default(ONE_TIME)
+  paymentType PaymentType?
+  description String?
+  amount      Decimal          @db.Decimal(10, 2)
+  date        DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+// Singleton — shop info & operational settings
+model Settings {
+  id              String   @id @default("settings")
+  logoUrl         String?
+  name            String   @default("Karel's Flowers")
+  address         String?
+  website         String?
+  phone           String?
+  phone2          String?
+  taxRate         Decimal  @default(1.0825) @db.Decimal(6, 4)
+  hoursOfOperation Json?
+  updatedAt       DateTime @updatedAt
+}
