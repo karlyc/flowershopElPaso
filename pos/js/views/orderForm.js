@@ -1,6 +1,7 @@
 // js/views/orderForm.js — Create Order / Edit Order (spec: "-Create Order")
 import { api } from '../api.js';
 import { money, escapeHtml } from '../format.js';
+import { countryCodeOptions } from '../countries.js';
 
 let items = [];
 let selectedClient = null;
@@ -35,19 +36,40 @@ export async function renderOrderForm(container, params) {
     <div class="card">
       <h3>Customer</h3>
       <input id="client-search" placeholder="Search by phone or name…" autocomplete="off"
-        value="${selectedClient ? escapeHtml(`${selectedClient.firstName} ${selectedClient.lastName} — ${selectedClient.phone}`) : ''}" />
+        value="${selectedClient ? escapeHtml(`${selectedClient.firstName} ${selectedClient.lastName} — ${selectedClient.phoneCode} ${selectedClient.phone}`) : ''}" />
       <div id="client-search-results" class="search-results" hidden></div>
       <button type="button" id="toggle-new-client" class="btn btn-sm" style="margin-top:0.5rem;">+ New customer</button>
       <div id="new-client-form" hidden style="margin-top:0.75rem;">
         <div class="grid-2">
-          <label>Phone *<input id="nc-phone" required /></label>
-          <label>Second phone<input id="nc-phone2" /></label>
+          <label>Phone *
+            <div style="display:flex;gap:0.4rem;">
+              <select id="nc-phoneCode" style="width:auto;flex:0 0 auto;">${countryCodeOptions('+1')}</select>
+              <input id="nc-phone" required />
+            </div>
+          </label>
+          <label>Second phone
+            <div style="display:flex;gap:0.4rem;">
+              <select id="nc-phone2Code" style="width:auto;flex:0 0 auto;">${countryCodeOptions('+1')}</select>
+              <input id="nc-phone2" />
+            </div>
+          </label>
           <label>First name *<input id="nc-firstName" required /></label>
           <label>Second name<input id="nc-secondName" /></label>
           <label>Last name *<input id="nc-lastName" required /></label>
           <label>Email<input id="nc-email" type="email" /></label>
           <label>Company<input id="nc-company" /></label>
-          <label>How did you hear about us?<input id="nc-referral" /></label>
+          <label>How did you hear about us?
+            <select id="nc-referral">
+              <option value="">—</option>
+              <option value="Recommended by a client">Recommended by a client</option>
+              <option value="Google Maps">Google Maps</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Passing by">Passing by</option>
+              <option value="Google">Google</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
         </div>
         <label>Notes<textarea id="nc-notes" rows="2"></textarea></label>
         <button type="button" id="save-new-client" class="btn btn-primary btn-sm">Save customer</button>
@@ -177,6 +199,7 @@ export async function renderOrderForm(container, params) {
     </div>
 
     <div id="receipt-wrap"></div>
+    <div id="quick-add-modal-wrap"></div>
   `;
 
   if (order) {
@@ -244,6 +267,39 @@ function renderItemsTable() {
   updateTotalsPreview();
 }
 
+function openQuickAddModal() {
+  const wrap = document.getElementById('quick-add-modal-wrap');
+  wrap.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal">
+        <h3>Quick add item</h3>
+        <label>Item name *<input id="qa-name" required /></label>
+        <label>Price *<input id="qa-price" type="number" step="0.01" required /></label>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="qa-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="qa-save">Add item</button>
+        </div>
+        <p id="qa-error" class="error-text" hidden></p>
+      </div>
+    </div>
+  `;
+  document.getElementById('qa-name').focus();
+  document.getElementById('qa-cancel').addEventListener('click', () => (wrap.innerHTML = ''));
+  document.getElementById('qa-save').addEventListener('click', () => {
+    const name = document.getElementById('qa-name').value.trim();
+    const price = Number(document.getElementById('qa-price').value);
+    if (!name) {
+      const e = document.getElementById('qa-error');
+      e.textContent = 'Item name is required.';
+      e.hidden = false;
+      return;
+    }
+    items.push({ productId: null, name, unitPrice: price || 0, quantity: 1, notes: '' });
+    wrap.innerHTML = '';
+    renderItemsTable();
+  });
+}
+
 function updateTotalsPreview() {
   const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const fee = Number(document.getElementById('deliveryFee')?.value) || 0;
@@ -279,7 +335,7 @@ function wireEvents(isEdit, orderId) {
       results.hidden = false;
       results.innerHTML = clients.length
         ? clients
-            .map((c) => `<div data-client-id="${c.id}">${escapeHtml(c.firstName)} ${escapeHtml(c.lastName)} — ${escapeHtml(c.phone)}</div>`)
+            .map((c) => `<div data-client-id="${c.id}">${escapeHtml(c.firstName)} ${escapeHtml(c.lastName)} — ${escapeHtml(c.phoneCode)} ${escapeHtml(c.phone)}</div>`)
             .join('')
         : '<div style="color:var(--text-dim);">No matches</div>';
     }, 250);
@@ -299,7 +355,9 @@ function wireEvents(isEdit, orderId) {
 
   document.getElementById('save-new-client').addEventListener('click', async () => {
     const body = {
+      phoneCode: document.getElementById('nc-phoneCode').value,
       phone: document.getElementById('nc-phone').value,
+      phone2Code: document.getElementById('nc-phone2Code').value,
       phone2: document.getElementById('nc-phone2').value,
       firstName: document.getElementById('nc-firstName').value,
       secondName: document.getElementById('nc-secondName').value,
@@ -312,7 +370,7 @@ function wireEvents(isEdit, orderId) {
     try {
       const client = await api.post('/clients', body);
       selectedClient = client;
-      document.getElementById('client-search').value = `${client.firstName} ${client.lastName} — ${client.phone}`;
+      document.getElementById('client-search').value = `${client.firstName} ${client.lastName} — ${client.phoneCode} ${client.phone}`;
       document.getElementById('new-client-form').hidden = true;
     } catch (err) {
       alert(err.message);
@@ -349,13 +407,7 @@ function wireEvents(isEdit, orderId) {
     renderItemsTable();
   });
 
-  document.getElementById('add-custom-item').addEventListener('click', () => {
-    const name = prompt('Item name?');
-    if (!name) return;
-    const price = Number(prompt('Price?') || 0);
-    items.push({ productId: null, name, unitPrice: price, quantity: 1, notes: '' });
-    renderItemsTable();
-  });
+  document.getElementById('add-custom-item').addEventListener('click', openQuickAddModal);
 
   document.getElementById('items-table').addEventListener('input', (e) => {
     const idx = e.target.dataset.idx;

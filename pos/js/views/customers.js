@@ -24,7 +24,7 @@ export async function renderCustomerList(container) {
         .map(
           (c) => `<tr>
         <td><a href="#/customers/${c.id}">${escapeHtml(c.firstName)} ${escapeHtml(c.lastName)}</a></td>
-        <td>${escapeHtml(c.phone)}</td>
+        <td>${escapeHtml(c.phoneCode)} ${escapeHtml(c.phone)}</td>
         <td>${c.orderCount}</td>
         <td><span class="badge badge-pink">${titleCase(c.tier)}</span></td>
         <td>${dateShort(c.clientSince)}</td>
@@ -56,7 +56,7 @@ export async function renderCustomerDetail(container, params) {
     <div class="grid-2">
       <div class="card">
         <h3>Contact</h3>
-        <p>Phone: ${escapeHtml(client.phone)}${client.phone2 ? ` / ${escapeHtml(client.phone2)}` : ''}<br/>
+        <p>Phone: ${escapeHtml(client.phoneCode)} ${escapeHtml(client.phone)}${client.phone2 ? ` / ${escapeHtml(client.phone2Code)} ${escapeHtml(client.phone2)}` : ''}<br/>
         Email: ${escapeHtml(client.email || '—')}<br/>
         Company: ${escapeHtml(client.company || '—')}<br/>
         Client since: ${dateShort(client.clientSince)}<br/>

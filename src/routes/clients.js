@@ -44,13 +44,26 @@ router.get('/:id', requireAuth, async (req, res, next) => {
 // POST /api/clients
 router.post('/', requireAuth, async (req, res, next) => {
   try {
-    const { phone, phone2, firstName, secondName, lastName, email, company, notes, referral } = req.body;
+    const { phoneCode, phone, phone2Code, phone2, firstName, secondName, lastName, email, company, notes, referral } =
+      req.body;
     if (!phone || !firstName || !lastName) {
       return res.status(400).json({ error: 'phone, firstName, and lastName are required' });
     }
 
     const client = await prisma.client.create({
-      data: { phone, phone2, firstName, secondName, lastName, email, company, notes, referral },
+      data: {
+        phoneCode: phoneCode || '+1',
+        phone,
+        phone2Code: phone2 ? phone2Code || '+1' : undefined,
+        phone2,
+        firstName,
+        secondName,
+        lastName,
+        email,
+        company,
+        notes,
+        referral,
+      },
     });
     res.status(201).json(client);
   } catch (err) {
@@ -62,10 +75,11 @@ router.post('/', requireAuth, async (req, res, next) => {
 // PUT /api/clients/:id
 router.put('/:id', requireAuth, async (req, res, next) => {
   try {
-    const { phone, phone2, firstName, secondName, lastName, email, company, notes, referral } = req.body;
+    const { phoneCode, phone, phone2Code, phone2, firstName, secondName, lastName, email, company, notes, referral } =
+      req.body;
     const client = await prisma.client.update({
       where: { id: req.params.id },
-      data: { phone, phone2, firstName, secondName, lastName, email, company, notes, referral },
+      data: { phoneCode, phone, phone2Code, phone2, firstName, secondName, lastName, email, company, notes, referral },
     });
     res.json(client);
   } catch (err) {

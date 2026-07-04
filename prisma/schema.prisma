@@ -42,7 +42,9 @@ enum ClientTier {
 
 model Client {
   id          String     @id @default(cuid())
+  phoneCode   String     @default("+1") // dial code, e.g. "+1" (USA), "+52" (Mexico)
   phone       String     @unique
+  phone2Code  String?    @default("+1")
   phone2      String?
   firstName   String
   secondName  String?

@@ -27,6 +27,7 @@ const sidebar = document.getElementById('sidebar');
 const content = document.getElementById('content');
 const pageTitle = document.getElementById('page-title');
 const staffNameEl = document.getElementById('staff-name');
+const staffAvatarEl = document.getElementById('staff-avatar');
 
 route('/dashboard', (c) => renderDashboard(c));
 route('/orders/new', (c) => renderOrderForm(c, {}));
@@ -51,7 +52,7 @@ route('/admin/users', (c) => renderUsers(c));
 function renderSidebar() {
   const currentBase = '/' + (location.hash.slice(1).split('/')[1] || 'dashboard');
   sidebar.innerHTML =
-    '<div class="brand">🌹 Karel\'s Flowers</div>' +
+    '<div class="brand"><img src="assets/logo-karels.png" alt="" /><span class="glyph">❀</span> Karel\'s Flowers</div>' +
     NAV.map((group) => {
       const visible = group.items.filter((i) => i.roles.includes(state.staff?.role));
       if (!visible.length) return '';
@@ -59,7 +60,7 @@ function renderSidebar() {
       const links = visible
         .map((i) => {
           const active = currentBase === '/' + i.path.split('/')[1] ? ' active' : '';
-          return `<a href="#${i.path}" class="nav-link${active}">${i.label}</a>`;
+          return `<a href="#${i.path}" class="nav-link${active}"><span class="nav-icon">${i.icon}</span>${i.label}</a>`;
         })
         .join('');
       return heading + links;
@@ -88,6 +89,7 @@ function showApp() {
   loginScreen.hidden = true;
   appShell.hidden = false;
   staffNameEl.textContent = `${state.staff.name} · ${state.staff.role}`;
+  staffAvatarEl.textContent = state.staff.name.trim().charAt(0).toUpperCase();
   renderCurrentRoute();
 }
 
@@ -99,14 +101,32 @@ function showLogin() {
 
 async function loadLoginStaffOptions() {
   const select = document.getElementById('login-staff');
+  const errorEl = document.getElementById('login-error');
   select.innerHTML = '<option>Loading…</option>';
   try {
     const staff = await api.get('/auth/staff');
     select.innerHTML = staff.map((s) => `<option value="${s.id}">${s.name}</option>`).join('');
-  } catch {
-    select.innerHTML = '<option value="">Could not load staff — check API connection</option>';
+  } catch (err) {
+    select.innerHTML = '<option value="">Could not load staff</option>';
+    errorEl.textContent = `Could not reach the API at ${window.KAREL_API_BASE}: ${err.message}`;
+    errorEl.hidden = false;
   }
 }
+
+window.addEventListener('error', (e) => {
+  const errorEl = document.getElementById('login-error');
+  if (errorEl) {
+    errorEl.textContent = `Script error: ${e.message} (${e.filename}:${e.lineno})`;
+    errorEl.hidden = false;
+  }
+});
+window.addEventListener('unhandledrejection', (e) => {
+  const errorEl = document.getElementById('login-error');
+  if (errorEl) {
+    errorEl.textContent = `Unhandled error: ${e.reason?.message || e.reason}`;
+    errorEl.hidden = false;
+  }
+});
 
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();

@@ -4,13 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Karel's Flowers — POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
   <!-- ── Login screen ── -->
   <div id="login-screen" class="login-screen">
     <form id="login-form" class="login-card">
-      <h1>🌹 Karel's Flowers</h1>
+      <img src="assets/logo-karels.png" alt="Karel's Flowers" width="56" height="56" style="border-radius: var(--radius-md); margin-bottom: 0.75rem;" />
+      <h1><span class="glyph">❀</span> Karel's Flowers</h1>
       <p class="login-subtitle">Staff sign in</p>
       <label>
         Staff
@@ -34,6 +38,7 @@
         <div class="topbar-title" id="page-title">Dashboard</div>
         <div class="topbar-staff">
           <span id="staff-name"></span>
+          <div id="staff-avatar" class="staff-avatar"></div>
           <button id="logout-btn" class="link-btn">Sign out</button>
         </div>
       </header>

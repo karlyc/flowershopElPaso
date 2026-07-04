@@ -223,4 +223,5 @@ Every route requires `Authorization: Bearer <token>` except `POST /api/auth/logi
 
 - **Tax**: default rate 1.0825, configurable via `/api/settings`; zeroed when an order's `taxExempt` flag is set.
 - **Client tier** (`REGULAR`/`SILVER`/`GOLD`/`DIAMOND`) is system-only, derived from `orderCount` at 10/20/30 orders — not shown to the customer.
+- **Phone country codes**: `Client.phoneCode`/`phone2Code` default to `+1` (USA); the POS phone inputs pin USA/Mexico at the top of the picker with the full country list underneath (`pos/js/countries.js`).
 - **Order numbers** are day-scoped and sequential, e.g. `20260703-0001`.
