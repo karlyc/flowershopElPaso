@@ -488,7 +488,7 @@ tr:hover td { background: var(--surface-sunken); }
 
 .receipt { font-family: "Courier New", monospace; max-width: 380px; margin: 0 auto; font-size: 0.85rem; }
 .receipt hr { border: none; border-top: 1px dashed var(--stone-500); }
-.receipt .receipt-row { display: flex; justify-content: space-between; }
+.receipt-row { display: flex; justify-content: space-between; padding: 3px 0; }
 .receipt-photos img { width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-md); margin-right: 4px; }
 
 @media print {

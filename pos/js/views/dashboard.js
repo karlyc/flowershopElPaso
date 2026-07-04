@@ -8,6 +8,12 @@ export async function renderDashboard(container) {
 
   container.innerHTML = `
     <div class="page-header"><h2>Dashboard</h2></div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Today's Sales</div><div class="kpi-value">${money(data.salesToday)}</div></div>
+      <div class="kpi"><div class="kpi-label">Orders Today</div><div class="kpi-value">${data.orderCountToday}</div></div>
+      <div class="kpi"><div class="kpi-label">To Arrange</div><div class="kpi-value">${data.toArrangeCount}</div></div>
+      <div class="kpi"><div class="kpi-label">Out for Delivery</div><div class="kpi-value">${data.outForDeliveryCount}</div></div>
+    </div>
     <div class="dashboard-cols">
       <div>
         <div class="card">
@@ -30,7 +36,7 @@ export async function renderDashboard(container) {
         </div>
         <div class="card">
           <h3>Reminders</h3>
-          <p style="color:var(--text-dim);font-size:0.8rem;margin-top:-0.5rem;">Birthday / anniversary clients whose anniversary is in 2 days</p>
+          <p style="color:var(--text-muted);font-size:0.8rem;margin-top:-0.5rem;">Birthday / anniversary clients whose anniversary is in 2 days</p>
           ${reminderList(data.reminders)}
         </div>
       </div>

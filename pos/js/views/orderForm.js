@@ -167,7 +167,7 @@ export async function renderOrderForm(container, params) {
         <label>Delivery fee<input id="deliveryFee" type="number" step="0.01" value="0" /></label>
         <label class="checkbox-line" style="margin-top:1.6rem;"><input type="checkbox" id="taxExempt" /> Tax exempt</label>
       </div>
-      <div id="totals-preview" class="card" style="background:#faf8f7;"></div>
+      <div id="totals-preview" style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border-hairline);"></div>
       <label>Notify customer via
         <select id="notifyVia">
           <option value="NONE">No notification</option>
@@ -337,7 +337,7 @@ function wireEvents(isEdit, orderId) {
         ? clients
             .map((c) => `<div data-client-id="${c.id}">${escapeHtml(c.firstName)} ${escapeHtml(c.lastName)} — ${escapeHtml(c.phoneCode)} ${escapeHtml(c.phone)}</div>`)
             .join('')
-        : '<div style="color:var(--text-dim);">No matches</div>';
+        : '<div style="color:var(--text-muted);">No matches</div>';
     }, 250);
   });
 
@@ -394,7 +394,7 @@ function wireEvents(isEdit, orderId) {
         ? products
             .map((p) => `<div data-product-id="${p.id}" data-name="${escapeHtml(p.name)}" data-price="${p.price}">${escapeHtml(p.code)} — ${escapeHtml(p.name)} (${money(p.price)})</div>`)
             .join('')
-        : '<div style="color:var(--text-dim);">No matches</div>';
+        : '<div style="color:var(--text-muted);">No matches</div>';
     }, 250);
   });
 
@@ -442,10 +442,10 @@ function wireEvents(isEdit, orderId) {
     try {
       const { valid } = await api.post(`/staff/${staffId}/verify-pin`, { pin });
       statusEl.textContent = valid ? '✓ Verified' : '✗ Incorrect PIN';
-      statusEl.style.color = valid ? 'var(--green)' : 'var(--red)';
+      statusEl.style.color = valid ? 'var(--success)' : 'var(--danger)';
     } catch (err) {
       statusEl.textContent = err.message;
-      statusEl.style.color = 'var(--red)';
+      statusEl.style.color = 'var(--danger)';
     }
   });
 

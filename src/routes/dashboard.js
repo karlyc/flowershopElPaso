@@ -103,9 +103,18 @@ router.get('/', requireAuth, async (_req, res, next) => {
     target.setDate(target.getDate() + 2);
     target.setFullYear(target.getFullYear() - 1);
     const { start: remStart, end: remEnd } = dayRange(target);
-    const { end: taskEnd } = dayRange(new Date());
+    const { start: todayStart, end: taskEnd } = dayRange(new Date());
 
-    const [todayDeliveries, tomorrowDeliveries, tasks, reminders, pendingPayments] = await Promise.all([
+    const [
+      todayDeliveries,
+      tomorrowDeliveries,
+      tasks,
+      reminders,
+      pendingPayments,
+      ordersToday,
+      toArrangeCount,
+      outForDeliveryCount,
+    ] = await Promise.all([
       deliveriesFor(new Date()),
       deliveriesFor(tomorrow),
       prisma.task.findMany({
@@ -126,9 +135,27 @@ router.get('/', requireAuth, async (_req, res, next) => {
         include: { client: true },
         orderBy: { createdAt: 'asc' },
       }),
+      // Orders placed today (by creation time), for the "Today's Sales" / "Orders Today" KPIs
+      prisma.order.findMany({
+        where: { createdAt: { gte: todayStart, lte: taskEnd }, orderStatus: { not: 'CANCELLED' } },
+      }),
+      prisma.order.count({ where: { orderStatus: 'MAKING_ARRANGEMENT' } }),
+      prisma.order.count({ where: { orderStatus: 'PENDING_DELIVERY', deliveryOption: { in: ['HOUSE', 'BUSINESS'] } } }),
     ]);
 
-    res.json({ todayDeliveries, tomorrowDeliveries, tasks, reminders, pendingPayments });
+    const salesToday = ordersToday.reduce((sum, o) => sum + Number(o.total), 0);
+
+    res.json({
+      todayDeliveries,
+      tomorrowDeliveries,
+      tasks,
+      reminders,
+      pendingPayments,
+      orderCountToday: ordersToday.length,
+      salesToday,
+      toArrangeCount,
+      outForDeliveryCount,
+    });
   } catch (err) {
     next(err);
   }

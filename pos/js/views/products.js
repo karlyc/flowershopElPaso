@@ -34,7 +34,11 @@ export async function renderProducts(container) {
       ${products
         .map(
           (p) => `<tr>
-        <td>${p.photo1Url ? `<img src="${UPLOADS_ORIGIN}${p.photo1Url}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;" />` : ''}</td>
+        <td>${
+          p.photo1Url
+            ? `<img src="${UPLOADS_ORIGIN}${p.photo1Url}" style="width:36px;height:36px;object-fit:cover;border-radius:var(--radius-md);" />`
+            : `<div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--sage-100);color:var(--forest-700);display:flex;align-items:center;justify-content:center;font-size:16px;">❀</div>`
+        }</td>
         <td>${escapeHtml(p.code)}</td>
         <td>${escapeHtml(p.name)}</td>
         <td>${escapeHtml(p.category?.name || '—')}</td>
@@ -166,7 +170,7 @@ async function openModal(product, categories, onSaved) {
 function renderRecipeRows() {
   const wrap = document.getElementById('recipe-rows');
   if (!recipeRows.length) {
-    wrap.innerHTML = '<p style="color:var(--text-dim);font-size:0.85rem;">No recipe items yet.</p>';
+    wrap.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">No recipe items yet.</p>';
     return;
   }
   wrap.innerHTML = recipeRows

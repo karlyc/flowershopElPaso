@@ -20,7 +20,7 @@ export async function renderShopSettings(container) {
       <label>Hours of operation<textarea id="s-hours" rows="3" placeholder="Mon-Fri 9am-6pm, Sat 9am-4pm">${escapeHtml(typeof settings.hoursOfOperation === 'string' ? settings.hoursOfOperation : JSON.stringify(settings.hoursOfOperation || ''))}</textarea></label>
       <button id="save-btn" class="btn btn-primary">Save</button>
       <p id="s-error" class="error-text" hidden></p>
-      <p id="s-success" style="color:var(--green);" hidden>Saved.</p>
+      <p id="s-success" style="color:var(--success);" hidden>Saved.</p>
     </div>
   `;
 
