@@ -31,171 +31,182 @@ export async function renderOrderForm(container, params) {
     : [];
 
   container.innerHTML = `
-    <div class="page-header"><h2>${isEdit ? `Edit Order ${escapeHtml(order.orderNumber)}` : 'Create Order'}</h2></div>
+    <div class="page-header order-form-header">
+      <div>
+        <h2>${isEdit ? `Edit Order ${escapeHtml(order.orderNumber)}` : 'Create Order'}</h2>
+        <p class="page-subtitle">${isEdit ? escapeHtml(order.orderNumber) : 'New order · number assigned on save'}</p>
+      </div>
+      <div class="toolbar no-print">
+        <span id="save-order-error" class="error-text"></span>
+        <button type="button" id="cancel-order-btn" class="btn">Cancel</button>
+        <button type="button" id="save-order-btn" class="btn btn-primary">${isEdit ? 'Save changes' : 'Save order'}</button>
+      </div>
+    </div>
 
-    <div class="card">
-      <h3>Customer</h3>
-      <input id="client-search" placeholder="Search by phone or name…" autocomplete="off"
-        value="${selectedClient ? escapeHtml(`${selectedClient.firstName} ${selectedClient.lastName} — ${selectedClient.phoneCode} ${selectedClient.phone}`) : ''}" />
-      <div id="client-search-results" class="search-results" hidden></div>
-      <button type="button" id="toggle-new-client" class="btn btn-sm" style="margin-top:0.5rem;">+ New customer</button>
-      <div id="new-client-form" hidden style="margin-top:0.75rem;">
-        <div class="grid-2">
-          <label>Phone *
-            <div style="display:flex;gap:0.4rem;">
-              <select id="nc-phoneCode" style="width:auto;flex:0 0 auto;">${countryCodeOptions('+1')}</select>
-              <input id="nc-phone" required />
+    <div class="order-form-cols">
+      <div class="order-form-main">
+        <div class="card">
+          <h3>Delivery</h3>
+          <div class="radio-group">
+            <label><input type="radio" name="deliveryOption" value="HOUSE" checked /> House / apt</label>
+            <label><input type="radio" name="deliveryOption" value="BUSINESS" /> Business / work</label>
+            <label><input type="radio" name="deliveryOption" value="PICKUP" /> Pickup</label>
+          </div>
+
+          <div id="delivery-house-business" class="grid-2">
+            <label>Recipient name<input id="recipientName" /></label>
+            <label>Recipient phone<input id="recipientPhone" /></label>
+            <label>Address<input id="address" /></label>
+            <label>Zip code
+              <select id="zip"><option value="">— custom —</option>${zipCodes
+                .map((z) => `<option value="${escapeHtml(z.zip)}" data-price="${z.price}">${escapeHtml(z.zip)} — ${money(z.price)}</option>`)
+                .join('')}</select>
+            </label>
+          </div>
+          <div id="delivery-business-only" class="grid-2" hidden>
+            <label>Business name<input id="businessName" /></label>
+            <label>Recipient dept / position<input id="businessDept" /></label>
+          </div>
+          <div id="delivery-pickup" class="grid-2" hidden>
+            <label class="checkbox-line"><input type="checkbox" id="pickupSelf" /> Customer will pick up</label>
+            <label>Name of person picking up<input id="pickupPersonName" /></label>
+          </div>
+          <label>Delivery notes<textarea id="deliveryNotes" rows="2"></textarea></label>
+
+          <div class="grid-2">
+            <label>Delivery date *<input id="deliveryDate" type="date" required /></label>
+            <label>Delivery time *
+              <div style="display:flex;gap:0.4rem;">
+                <select id="deliveryTimeType" style="width:auto;">
+                  <option value="AT">At</option>
+                  <option value="BEFORE">Before</option>
+                  <option value="AFTER">After</option>
+                </select>
+                <input id="deliveryTime" placeholder="2:30 PM" required />
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Products</h3>
+          <input id="product-search" placeholder="Search products by code, name, or flower…" autocomplete="off" />
+          <div id="product-search-results" class="search-results" hidden></div>
+          <button type="button" id="add-custom-item" class="btn btn-sm" style="margin:0.5rem 0;">+ Quick add item</button>
+          <div id="items-table"></div>
+        </div>
+
+        <div class="card">
+          <h3>Occasion &amp; Message</h3>
+          <div class="grid-2">
+            <label>Occasion
+              <select id="occasion">
+                <option value="BIRTHDAY">Birthday</option>
+                <option value="ANNIVERSARY">Anniversary</option>
+                <option value="FUNERAL">Funeral</option>
+                <option value="GRADUATION">Graduation</option>
+                <option value="LOVE">Love</option>
+                <option value="OTHER" selected>Other</option>
+              </select>
+            </label>
+          </div>
+          <div id="banner-fields" hidden class="grid-2">
+            <label>Banner color<input id="bannerColor" /></label>
+            <label>Banner message<input id="bannerMessage" /></label>
+          </div>
+          <label>Message<textarea id="messageText" rows="2"></textarea></label>
+          <div class="grid-2">
+            <label>Signature<input id="messageFrom" /></label>
+            <label class="checkbox-line" style="margin-top:1.6rem;"><input type="checkbox" id="messageAnon" /> Anonymous</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-form-side">
+        <div class="card">
+          <h3>Customer</h3>
+          <input id="client-search" placeholder="Search by phone or name…" autocomplete="off"
+            value="${selectedClient ? escapeHtml(`${selectedClient.firstName} ${selectedClient.lastName} — ${selectedClient.phoneCode} ${selectedClient.phone}`) : ''}" />
+          <div id="client-search-results" class="search-results" hidden></div>
+          <button type="button" id="toggle-new-client" class="btn btn-sm" style="margin-top:0.5rem;">+ New customer</button>
+          <div id="new-client-form" hidden style="margin-top:0.75rem;">
+            <div class="grid-2">
+              <label>Phone *
+                <div style="display:flex;gap:0.4rem;">
+                  <select id="nc-phoneCode" style="width:auto;flex:0 0 auto;">${countryCodeOptions('+1')}</select>
+                  <input id="nc-phone" required />
+                </div>
+              </label>
+              <label>Second phone
+                <div style="display:flex;gap:0.4rem;">
+                  <select id="nc-phone2Code" style="width:auto;flex:0 0 auto;">${countryCodeOptions('+1')}</select>
+                  <input id="nc-phone2" />
+                </div>
+              </label>
+              <label>First name *<input id="nc-firstName" required /></label>
+              <label>Second name<input id="nc-secondName" /></label>
+              <label>Last name *<input id="nc-lastName" required /></label>
+              <label>Email<input id="nc-email" type="email" /></label>
+              <label>Company<input id="nc-company" /></label>
+              <label>How did you hear about us?
+                <select id="nc-referral">
+                  <option value="">—</option>
+                  <option value="Recommended by a client">Recommended by a client</option>
+                  <option value="Google Maps">Google Maps</option>
+                  <option value="Instagram">Instagram</option>
+                  <option value="Facebook">Facebook</option>
+                  <option value="Passing by">Passing by</option>
+                  <option value="Google">Google</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
             </div>
-          </label>
-          <label>Second phone
-            <div style="display:flex;gap:0.4rem;">
-              <select id="nc-phone2Code" style="width:auto;flex:0 0 auto;">${countryCodeOptions('+1')}</select>
-              <input id="nc-phone2" />
-            </div>
-          </label>
-          <label>First name *<input id="nc-firstName" required /></label>
-          <label>Second name<input id="nc-secondName" /></label>
-          <label>Last name *<input id="nc-lastName" required /></label>
-          <label>Email<input id="nc-email" type="email" /></label>
-          <label>Company<input id="nc-company" /></label>
-          <label>How did you hear about us?
-            <select id="nc-referral">
-              <option value="">—</option>
-              <option value="Recommended by a client">Recommended by a client</option>
-              <option value="Google Maps">Google Maps</option>
-              <option value="Instagram">Instagram</option>
-              <option value="Facebook">Facebook</option>
-              <option value="Passing by">Passing by</option>
-              <option value="Google">Google</option>
-              <option value="Other">Other</option>
+            <label>Notes<textarea id="nc-notes" rows="2"></textarea></label>
+            <button type="button" id="save-new-client" class="btn btn-primary btn-sm">Save customer</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Payment</h3>
+          <div class="grid-2">
+            <label>Payment type
+              <select id="paymentType">
+                <option value="CARD">Card</option>
+                <option value="CASH">Cash</option>
+                <option value="CHECK">Check</option>
+                <option value="ZELLE">Zelle</option>
+                <option value="CASHAPP">Cashapp</option>
+              </select>
+            </label>
+            <label class="checkbox-line" style="margin-top:1.6rem;"><input type="checkbox" id="taxExempt" /> Tax exempt</label>
+          </div>
+          <label>Delivery fee<input id="deliveryFee" type="number" step="0.01" value="0" /></label>
+          <div id="totals-preview" style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border-hairline);"></div>
+          <label>Notify customer via
+            <select id="notifyVia">
+              <option value="NONE">No notification</option>
+              <option value="EMAIL">Email</option>
+              <option value="WHATSAPP">WhatsApp</option>
             </select>
           </label>
         </div>
-        <label>Notes<textarea id="nc-notes" rows="2"></textarea></label>
-        <button type="button" id="save-new-client" class="btn btn-primary btn-sm">Save customer</button>
-      </div>
-    </div>
 
-    <div class="card">
-      <h3>Products</h3>
-      <input id="product-search" placeholder="Search products by code, name, or flower…" autocomplete="off" />
-      <div id="product-search-results" class="search-results" hidden></div>
-      <button type="button" id="add-custom-item" class="btn btn-sm" style="margin:0.5rem 0;">+ Quick add item</button>
-      <div id="items-table"></div>
-    </div>
-
-    <div class="card">
-      <h3>Occasion &amp; Message</h3>
-      <div class="grid-2">
-        <label>Occasion
-          <select id="occasion">
-            <option value="BIRTHDAY">Birthday</option>
-            <option value="ANNIVERSARY">Anniversary</option>
-            <option value="FUNERAL">Funeral</option>
-            <option value="GRADUATION">Graduation</option>
-            <option value="LOVE">Love</option>
-            <option value="OTHER" selected>Other</option>
-          </select>
-        </label>
-      </div>
-      <div id="banner-fields" hidden class="grid-2">
-        <label>Banner color<input id="bannerColor" /></label>
-        <label>Banner message<input id="bannerMessage" /></label>
-      </div>
-      <label>Message<textarea id="messageText" rows="2"></textarea></label>
-      <div class="grid-2">
-        <label>Signature<input id="messageFrom" /></label>
-        <label class="checkbox-line" style="margin-top:1.6rem;"><input type="checkbox" id="messageAnon" /> Anonymous</label>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Delivery</h3>
-      <div class="radio-group">
-        <label><input type="radio" name="deliveryOption" value="HOUSE" checked /> House / apt</label>
-        <label><input type="radio" name="deliveryOption" value="BUSINESS" /> Business / work</label>
-        <label><input type="radio" name="deliveryOption" value="PICKUP" /> Pickup</label>
-      </div>
-
-      <div id="delivery-house-business" class="grid-2">
-        <label>Recipient name<input id="recipientName" /></label>
-        <label>Recipient phone<input id="recipientPhone" /></label>
-        <label>Address<input id="address" /></label>
-        <label>Zip code
-          <select id="zip"><option value="">— custom —</option>${zipCodes
-            .map((z) => `<option value="${escapeHtml(z.zip)}" data-price="${z.price}">${escapeHtml(z.zip)} — ${money(z.price)}</option>`)
-            .join('')}</select>
-        </label>
-      </div>
-      <div id="delivery-business-only" class="grid-2" hidden>
-        <label>Business name<input id="businessName" /></label>
-        <label>Recipient dept / position<input id="businessDept" /></label>
-      </div>
-      <div id="delivery-pickup" class="grid-2" hidden>
-        <label class="checkbox-line"><input type="checkbox" id="pickupSelf" /> Customer will pick up</label>
-        <label>Name of person picking up<input id="pickupPersonName" /></label>
-      </div>
-      <label>Delivery notes<textarea id="deliveryNotes" rows="2"></textarea></label>
-
-      <div class="grid-2">
-        <label>Delivery date *<input id="deliveryDate" type="date" required /></label>
-        <label>Delivery time *
-          <div style="display:flex;gap:0.4rem;">
-            <select id="deliveryTimeType" style="width:auto;">
-              <option value="AT">At</option>
-              <option value="BEFORE">Before</option>
-              <option value="AFTER">After</option>
-            </select>
-            <input id="deliveryTime" placeholder="2:30 PM" required />
+        <div class="card">
+          <h3>Assisted by</h3>
+          <div class="grid-2">
+            <label>Staff
+              <select id="assistedById">${staffList.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')}</select>
+            </label>
+            <label>PIN
+              <div style="display:flex;gap:0.4rem;">
+                <input id="assistedPin" type="password" inputmode="numeric" />
+                <button type="button" id="verify-pin-btn" class="btn btn-sm">Verify</button>
+              </div>
+            </label>
           </div>
-        </label>
+          <span id="pin-status" style="font-size:0.8rem;"></span>
+        </div>
       </div>
-    </div>
-
-    <div class="card">
-      <h3>Payment</h3>
-      <div class="grid-3">
-        <label>Payment type
-          <select id="paymentType">
-            <option value="CARD">Card</option>
-            <option value="CASH">Cash</option>
-            <option value="CHECK">Check</option>
-            <option value="ZELLE">Zelle</option>
-            <option value="CASHAPP">Cashapp</option>
-          </select>
-        </label>
-        <label>Delivery fee<input id="deliveryFee" type="number" step="0.01" value="0" /></label>
-        <label class="checkbox-line" style="margin-top:1.6rem;"><input type="checkbox" id="taxExempt" /> Tax exempt</label>
-      </div>
-      <div id="totals-preview" style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border-hairline);"></div>
-      <label>Notify customer via
-        <select id="notifyVia">
-          <option value="NONE">No notification</option>
-          <option value="EMAIL">Email</option>
-          <option value="WHATSAPP">WhatsApp</option>
-        </select>
-      </label>
-    </div>
-
-    <div class="card">
-      <h3>Assisted by</h3>
-      <div class="grid-2">
-        <label>Staff
-          <select id="assistedById">${staffList.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')}</select>
-        </label>
-        <label>PIN
-          <div style="display:flex;gap:0.4rem;">
-            <input id="assistedPin" type="password" inputmode="numeric" />
-            <button type="button" id="verify-pin-btn" class="btn btn-sm">Verify</button>
-          </div>
-        </label>
-      </div>
-      <span id="pin-status" style="font-size:0.8rem;"></span>
-    </div>
-
-    <div class="no-print" style="display:flex;gap:0.6rem;">
-      <button type="button" id="save-order-btn" class="btn btn-primary">${isEdit ? 'Save changes' : 'Save order'}</button>
-      <span id="save-order-error" class="error-text" style="align-self:center;"></span>
     </div>
 
     <div id="receipt-wrap"></div>
@@ -450,6 +461,9 @@ function wireEvents(isEdit, orderId) {
   });
 
   document.getElementById('save-order-btn').addEventListener('click', () => saveOrder(isEdit, orderId));
+  document.getElementById('cancel-order-btn').addEventListener('click', () => {
+    location.hash = isEdit ? `#/orders/${orderId}` : '#/orders';
+  });
 }
 
 async function saveOrder(isEdit, orderId) {

@@ -452,6 +452,14 @@ tr:hover td { background: var(--surface-sunken); }
 .dashboard-cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem; }
 @media (max-width: 900px) { .dashboard-cols { grid-template-columns: 1fr; } }
 
+.order-form-cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem; align-items: start; }
+.order-form-side { position: sticky; top: 1.5rem; display: flex; flex-direction: column; }
+@media (max-width: 900px) { .order-form-cols { grid-template-columns: 1fr; } .order-form-side { position: static; } }
+
+.page-subtitle { margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--text-muted); }
+.order-form-header .toolbar { align-items: center; }
+.order-form-header .error-text { margin-top: 0; }
+
 .line-item-row { display: grid; grid-template-columns: 2fr 70px 90px 1.2fr 40px; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
 .radio-group { display: flex; gap: 1rem; margin-bottom: 0.75rem; }
 .radio-group label { flex-direction: row; align-items: center; gap: 0.4rem; font-size: 0.9rem; color: var(--text); }

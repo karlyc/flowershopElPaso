@@ -4,4 +4,4 @@
 window.KAREL_API_BASE =
   location.hostname === 'localhost' || location.hostname === '127.0.0.1'
     ? 'http://localhost:3000/api'
-    : 'https://REPLACE-WITH-YOUR-RAILWAY-DOMAIN.up.railway.app/api';
+    : 'https://flowershopelpaso-production.up.railway.app/api';
