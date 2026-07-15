@@ -21,7 +21,7 @@ let pinVerified = false;
 export async function renderOrderForm(container, params) {
   const isEdit = !!params.id;
   const [zips, settings, staffList, catalogAddOns, order] = await Promise.all([
-    api.get('/zip-codes'),
+    api.get('/zip-codes?active=true'),
     api.get('/settings'),
     api.get('/staff'),
     api.get('/add-ons'),
@@ -99,9 +99,12 @@ export async function renderOrderForm(container, params) {
             <label>Recipient name<input id="recipientName" /></label>
             <label>Recipient phone<input id="recipientPhone" /></label>
             <label>Address<input id="address" /></label>
-            <label>Zip code
+            <label>Zip code / city
               <select id="zip"><option value="">— custom —</option>${zipCodes
-                .map((z) => `<option value="${escapeHtml(z.zip)}" data-price="${z.price}">${escapeHtml(z.zip)} — ${money(z.price)}</option>`)
+                .map((z) => {
+                  const label = z.type === 'CITY' ? `${z.city}${z.state ? ', ' + z.state : ''}` : z.zip;
+                  return `<option value="${escapeHtml(label)}" data-price="${z.price}">${escapeHtml(label)} — ${money(z.price)}</option>`;
+                })
                 .join('')}</select>
             </label>
           </div>

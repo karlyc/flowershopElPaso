@@ -165,12 +165,21 @@ model AddOn {
   orderAddOns OrderAddOn[]
 }
 
+enum DeliveryZoneType {
+  ZIP
+  CITY
+}
+
 model ZipCode {
-  id        String   @id @default(cuid())
-  zip       String   @unique
-  price     Decimal  @db.Decimal(10, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String           @id @default(cuid())
+  type      DeliveryZoneType @default(ZIP)
+  zip       String?          @unique
+  city      String?
+  state     String?
+  price     Decimal          @db.Decimal(10, 2)
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 }
 
 // ── Orders ────────────────────────────────────────────────────────
