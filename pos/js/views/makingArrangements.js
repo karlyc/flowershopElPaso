@@ -32,6 +32,19 @@ export async function renderMakingArrangements(container) {
             })
             .join('')}
         </tbody></table>
+        ${o.addOns?.length ? `<table style="margin-top:0.5rem;"><thead><tr><th>Add-on</th><th>Detail</th><th>Qty</th></tr></thead><tbody>
+          ${o.addOns
+            .map((a) => {
+              const detail =
+                a.kind === 'BANNER'
+                  ? [a.bannerColor, a.bannerMessage].filter(Boolean).join(' — ')
+                  : a.kind === 'BALLOONS'
+                    ? a.balloonOccasion || ''
+                    : '';
+              return `<tr><td>${escapeHtml(a.name)}</td><td>${escapeHtml(detail)}</td><td>${a.quantity}</td></tr>`;
+            })
+            .join('')}
+        </tbody></table>` : ''}
       </div>`
       )
       .join('');

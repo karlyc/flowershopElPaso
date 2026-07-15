@@ -13,6 +13,7 @@ router.get('/', requireAuth, async (_req, res, next) => {
       include: {
         client: true,
         items: { include: { product: { include: { recipe: { include: { inventoryItem: true } } } } } },
+        addOns: { include: { addOn: true } },
       },
       orderBy: [{ deliveryDate: 'asc' }, { deliveryTime: 'asc' }],
     });

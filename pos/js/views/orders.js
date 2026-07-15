@@ -82,10 +82,18 @@ function debounce(fn, ms) {
 }
 
 export async function renderOrderDetail(container, params) {
-  const order = await api.get(`/orders/${params.id}`);
+  const [order, shop] = await Promise.all([api.get(`/orders/${params.id}`), api.get('/settings')]);
   const canCancel = state.staff.role === 'ADMIN' && order.orderStatus !== 'CANCELLED';
 
   container.innerHTML = `
+    <div class="receipt-letterhead">
+      ${shop.logoUrl ? `<img src="${UPLOADS_ORIGIN}${shop.logoUrl}" alt="" />` : ''}
+      <h2>${escapeHtml(shop.name)}</h2>
+      ${[shop.phone, shop.phone2].filter(Boolean).length ? `<p>${[shop.phone, shop.phone2].filter(Boolean).map(escapeHtml).join(' · ')}</p>` : ''}
+      ${shop.address ? `<p>${escapeHtml(shop.address)}</p>` : ''}
+      ${shop.website ? `<p>${escapeHtml(shop.website)}</p>` : ''}
+    </div>
+
     <div class="page-header">
       <h2>Order ${escapeHtml(order.orderNumber)}
         <span class="badge ${STATUS_BADGE[order.orderStatus]}">${titleCase(order.orderStatus)}</span>
@@ -114,7 +122,7 @@ export async function renderOrderDetail(container, params) {
       </div>
       <div class="card">
         <h3>Occasion &amp; Message</h3>
-        <p>${titleCase(order.occasion)}${order.bannerMessage ? `<br/>Banner (${escapeHtml(order.bannerColor || '')}): ${escapeHtml(order.bannerMessage)}` : ''}</p>
+        <p>${titleCase(order.occasion)}</p>
         <p>${escapeHtml(order.messageText || '—')}<br/>— ${order.messageAnon ? 'Anonymous' : escapeHtml(order.messageFrom || '')}</p>
       </div>
     </div>
@@ -128,7 +136,21 @@ export async function renderOrderDetail(container, params) {
           )
           .join('')}
       </tbody></table>
-      <div class="receipt-row"><span>Subtotal</span><span>${money(order.subtotal)}</span></div>
+      ${order.addOns?.length ? `<h3 style="margin-top:1.25rem;">Add Ons</h3>
+      <table><thead><tr><th>Item</th><th>Detail</th><th>Qty</th><th>Price</th></tr></thead><tbody>
+        ${order.addOns
+          .map((a) => {
+            const detail =
+              a.kind === 'BANNER'
+                ? [a.bannerColor, a.bannerMessage].filter(Boolean).join(' — ')
+                : a.kind === 'BALLOONS'
+                  ? a.balloonOccasion || ''
+                  : '';
+            return `<tr><td>${escapeHtml(a.name)}</td><td>${escapeHtml(detail)}</td><td>${a.quantity}</td><td>${money(a.unitPrice)}</td></tr>`;
+          })
+          .join('')}
+      </tbody></table>` : ''}
+      <div class="receipt-row" style="margin-top:1rem;"><span>Subtotal</span><span>${money(order.subtotal)}</span></div>
       <div class="receipt-row"><span>Delivery fee</span><span>${money(order.deliveryFee)}</span></div>
       <div class="receipt-row"><span>Tax</span><span>${money(order.tax)}</span></div>
       <div class="receipt-row" style="font-weight:700;"><span>Total</span><span>${money(order.total)}</span></div>

@@ -14,6 +14,7 @@ export const NAV = [
   { group: 'Catalog', items: [
     { path: '/categories', label: 'Categories', icon: '❖', roles: ['ADMIN', 'OFFICE'] },
     { path: '/products', label: 'Products', icon: '✿', roles: ['ADMIN', 'OFFICE'] },
+    { path: '/add-ons', label: 'Add Ons', icon: '✦', roles: ['ADMIN', 'OFFICE'] },
     { path: '/inventory', label: 'Inventory', icon: '▦', roles: ['ADMIN', 'OFFICE', 'FLORIST', 'DRIVER'] },
     { path: '/zip-codes', label: 'Zip Codes', icon: '⌖', roles: ['ADMIN', 'OFFICE'] },
   ]},

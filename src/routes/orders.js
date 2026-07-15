@@ -37,7 +37,12 @@ router.get('/', requireAuth, async (req, res, next) => {
 
     const orders = await prisma.order.findMany({
       where,
-      include: { client: true, items: { include: { product: true } }, assistedBy: true },
+      include: {
+        client: true,
+        items: { include: { product: true } },
+        addOns: { include: { addOn: true } },
+        assistedBy: true,
+      },
       orderBy: { createdAt: 'asc' },
     });
     res.json(orders);
@@ -50,7 +55,12 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const order = await prisma.order.findUnique({
       where: { id: req.params.id },
-      include: { client: true, items: { include: { product: true } }, assistedBy: true },
+      include: {
+        client: true,
+        items: { include: { product: true } },
+        addOns: { include: { addOn: true } },
+        assistedBy: true,
+      },
     });
     if (!order) return res.status(404).json({ error: 'Order not found' });
     res.json(order);
@@ -65,7 +75,11 @@ router.get('/:id/receipt', requireAuth, async (req, res, next) => {
     const [order, settings] = await Promise.all([
       prisma.order.findUnique({
         where: { id: req.params.id },
-        include: { client: true, items: { include: { product: true } } },
+        include: {
+          client: true,
+          items: { include: { product: true } },
+          addOns: { include: { addOn: true } },
+        },
       }),
       prisma.settings.findUnique({ where: { id: 'settings' } }),
     ]);
@@ -76,8 +90,10 @@ router.get('/:id/receipt', requireAuth, async (req, res, next) => {
   }
 });
 
-async function computeTotals({ items, deliveryFee, taxExempt }) {
-  const subtotal = items.reduce((sum, i) => sum + Number(i.unitPrice) * (i.quantity || 1), 0);
+async function computeTotals({ items, addOns, deliveryFee, taxExempt }) {
+  const itemsTotal = items.reduce((sum, i) => sum + Number(i.unitPrice) * (i.quantity || 1), 0);
+  const addOnsTotal = (addOns || []).reduce((sum, a) => sum + Number(a.unitPrice) * (a.quantity || 1), 0);
+  const subtotal = itemsTotal + addOnsTotal;
   const fee = Number(deliveryFee) || 0;
   const taxRate = await getTaxRate();
   const tax = taxExempt ? 0 : Math.round((subtotal + fee) * (taxRate - 1) * 100) / 100;
@@ -94,8 +110,6 @@ router.post('/', requireAuth, async (req, res, next) => {
       deliveryTimeType,
       deliveryTime,
       occasion,
-      bannerColor,
-      bannerMessage,
       messageText,
       messageFrom,
       messageAnon,
@@ -115,6 +129,7 @@ router.post('/', requireAuth, async (req, res, next) => {
       notifyVia,
       assistedById,
       items,
+      addOns,
     } = req.body;
 
     if (!clientId || !deliveryDate || !deliveryTime || !deliveryOption || !Array.isArray(items) || !items.length) {
@@ -123,7 +138,7 @@ router.post('/', requireAuth, async (req, res, next) => {
         .json({ error: 'clientId, deliveryDate, deliveryTime, deliveryOption, and items are required' });
     }
 
-    const { subtotal, tax, total } = await computeTotals({ items, deliveryFee, taxExempt });
+    const { subtotal, tax, total } = await computeTotals({ items, addOns, deliveryFee, taxExempt });
     const orderNumber = await generateOrderNumber();
 
     const order = await prisma.$transaction(async (tx) => {
@@ -135,8 +150,6 @@ router.post('/', requireAuth, async (req, res, next) => {
           deliveryTimeType,
           deliveryTime,
           occasion,
-          bannerColor,
-          bannerMessage,
           messageText,
           messageFrom,
           messageAnon: !!messageAnon,
@@ -167,8 +180,20 @@ router.post('/', requireAuth, async (req, res, next) => {
               notes: i.notes,
             })),
           },
+          addOns: {
+            create: (addOns || []).map((a) => ({
+              addOnId: a.addOnId,
+              kind: a.kind,
+              name: a.name,
+              quantity: a.quantity || 1,
+              unitPrice: a.unitPrice,
+              bannerColor: a.bannerColor,
+              bannerMessage: a.bannerMessage,
+              balloonOccasion: a.balloonOccasion,
+            })),
+          },
         },
-        include: { client: true, items: { include: { product: true } } },
+        include: { client: true, items: { include: { product: true } }, addOns: { include: { addOn: true } } },
       });
 
       const newCount = created.client.orderCount + 1;
@@ -197,8 +222,6 @@ router.put('/:id', requireAuth, async (req, res, next) => {
       deliveryTimeType,
       deliveryTime,
       occasion,
-      bannerColor,
-      bannerMessage,
       messageText,
       messageFrom,
       messageAnon,
@@ -218,14 +241,13 @@ router.put('/:id', requireAuth, async (req, res, next) => {
       notifyVia,
       assistedById,
       items,
+      addOns,
     } = req.body;
 
     const data = {
       deliveryTimeType,
       deliveryTime,
       occasion,
-      bannerColor,
-      bannerMessage,
       messageText,
       messageFrom,
       deliveryOption,
@@ -245,9 +267,17 @@ router.put('/:id', requireAuth, async (req, res, next) => {
     if (messageAnon !== undefined) data.messageAnon = !!messageAnon;
     if (pickupSelf !== undefined) data.pickupSelf = !!pickupSelf;
 
-    if (Array.isArray(items)) {
+    if (Array.isArray(items) || Array.isArray(addOns)) {
+      const currentItems = Array.isArray(items)
+        ? items
+        : await prisma.orderItem.findMany({ where: { orderId: req.params.id } });
+      const currentAddOns = Array.isArray(addOns)
+        ? addOns
+        : await prisma.orderAddOn.findMany({ where: { orderId: req.params.id } });
+
       const { subtotal, tax, total } = await computeTotals({
-        items,
+        items: currentItems,
+        addOns: currentAddOns,
         deliveryFee: deliveryFee ?? existing.deliveryFee,
         taxExempt: taxExempt ?? existing.taxExempt,
       });
@@ -257,36 +287,55 @@ router.put('/:id', requireAuth, async (req, res, next) => {
       if (deliveryFee !== undefined) data.deliveryFee = deliveryFee;
       if (taxExempt !== undefined) data.taxExempt = !!taxExempt;
 
-      await prisma.orderItem.deleteMany({ where: { orderId: req.params.id } });
-      data.items = {
-        create: items.map((i) => ({
-          productId: i.productId || undefined,
-          customName: i.customName,
-          quantity: i.quantity || 1,
-          unitPrice: i.unitPrice,
-          notes: i.notes,
-        })),
-      };
-    } else {
-      if (deliveryFee !== undefined || taxExempt !== undefined) {
-        const currentItems = await prisma.orderItem.findMany({ where: { orderId: req.params.id } });
-        const { subtotal, tax, total } = await computeTotals({
-          items: currentItems,
-          deliveryFee: deliveryFee ?? existing.deliveryFee,
-          taxExempt: taxExempt ?? existing.taxExempt,
-        });
-        data.subtotal = subtotal;
-        data.tax = tax;
-        data.total = total;
-        if (deliveryFee !== undefined) data.deliveryFee = deliveryFee;
-        if (taxExempt !== undefined) data.taxExempt = !!taxExempt;
+      if (Array.isArray(items)) {
+        await prisma.orderItem.deleteMany({ where: { orderId: req.params.id } });
+        data.items = {
+          create: items.map((i) => ({
+            productId: i.productId || undefined,
+            customName: i.customName,
+            quantity: i.quantity || 1,
+            unitPrice: i.unitPrice,
+            notes: i.notes,
+          })),
+        };
       }
+      if (Array.isArray(addOns)) {
+        await prisma.orderAddOn.deleteMany({ where: { orderId: req.params.id } });
+        data.addOns = {
+          create: addOns.map((a) => ({
+            addOnId: a.addOnId,
+            kind: a.kind,
+            name: a.name,
+            quantity: a.quantity || 1,
+            unitPrice: a.unitPrice,
+            bannerColor: a.bannerColor,
+            bannerMessage: a.bannerMessage,
+            balloonOccasion: a.balloonOccasion,
+          })),
+        };
+      }
+    } else if (deliveryFee !== undefined || taxExempt !== undefined) {
+      const [currentItems, currentAddOns] = await Promise.all([
+        prisma.orderItem.findMany({ where: { orderId: req.params.id } }),
+        prisma.orderAddOn.findMany({ where: { orderId: req.params.id } }),
+      ]);
+      const { subtotal, tax, total } = await computeTotals({
+        items: currentItems,
+        addOns: currentAddOns,
+        deliveryFee: deliveryFee ?? existing.deliveryFee,
+        taxExempt: taxExempt ?? existing.taxExempt,
+      });
+      data.subtotal = subtotal;
+      data.tax = tax;
+      data.total = total;
+      if (deliveryFee !== undefined) data.deliveryFee = deliveryFee;
+      if (taxExempt !== undefined) data.taxExempt = !!taxExempt;
     }
 
     const order = await prisma.order.update({
       where: { id: req.params.id },
       data,
-      include: { client: true, items: { include: { product: true } } },
+      include: { client: true, items: { include: { product: true } }, addOns: { include: { addOn: true } } },
     });
     res.json(order);
   } catch (err) {

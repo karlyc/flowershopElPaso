@@ -461,6 +461,24 @@ tr:hover td { background: var(--surface-sunken); }
 .order-form-header .error-text { margin-top: 0; }
 
 .line-item-row { display: grid; grid-template-columns: 2fr 70px 90px 1.2fr 40px; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+.order-line-item { padding-bottom: 0.75rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-hairline); }
+.order-line-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.line-item-notes { width: 100%; min-height: 2.5rem; margin-top: 0.4rem; }
+
+.addon-line-item { background: var(--sage-50); border: 1px solid var(--sage-300); border-radius: var(--radius-md); padding: 0.65rem 0.75rem; margin-bottom: 0.6rem; }
+.addon-line-item:last-child { margin-bottom: 0; }
+.addon-line-item .line-item-row span:first-child { color: var(--forest-700); font-weight: var(--weight-semibold); }
+
+.addon-group { margin-bottom: 0.9rem; }
+.addon-group-label { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--text-muted); margin-bottom: 0.35rem; }
+.addon-catalog-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.45rem 0; border-bottom: 1px solid var(--border-hairline); font-size: 0.9rem; }
+.addon-catalog-row:last-child { border-bottom: none; }
+.addon-catalog-row span:first-child { flex: 1; }
+
+.phone-input-row { display: flex; gap: 0.4rem; }
+.phone-input-row .phone-code-select { flex: 0 0 108px; width: 108px; }
+.phone-input-row input.phone-input { flex: 1 1 0%; min-width: 0; font-size: 1.05rem; padding: 0.75rem 0.85rem; }
+
 .radio-group { display: flex; gap: 1rem; margin-bottom: 0.75rem; }
 .radio-group label { flex-direction: row; align-items: center; gap: 0.4rem; font-size: 0.9rem; color: var(--text); }
 .radio-group input { width: auto; min-height: 0; }
@@ -493,6 +511,11 @@ tr:hover td { background: var(--surface-sunken); }
 }
 .search-results div { padding: 0.5rem 0.6rem; font-size: 0.85rem; cursor: pointer; }
 .search-results div:hover { background: var(--surface-sunken); }
+
+.receipt-letterhead { text-align: center; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
+.receipt-letterhead img { width: 64px; height: 64px; object-fit: contain; margin: 0 auto 0.6rem; display: block; }
+.receipt-letterhead h2 { margin: 0 0 0.35rem; }
+.receipt-letterhead p { margin: 0.15rem 0; font-size: 0.85rem; color: var(--text-dim); }
 
 .receipt { font-family: "Courier New", monospace; max-width: 380px; margin: 0 auto; font-size: 0.85rem; }
 .receipt hr { border: none; border-top: 1px dashed var(--stone-500); }

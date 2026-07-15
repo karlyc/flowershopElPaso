@@ -3,21 +3,33 @@ import { api } from '../api.js';
 import { money, escapeHtml } from '../format.js';
 import { countryCodeOptions } from '../countries.js';
 
+const ADDON_GROUPS = [
+  ['BANNER', 'Banner'],
+  ['BALLOONS', 'Balloons'],
+  ['TEDDY_BEAR', 'Teddy Bears'],
+  ['CHOCOLATES', 'Chocolates'],
+];
+
 let items = [];
+let addOns = [];
+let availableAddOns = [];
 let selectedClient = null;
 let taxRate = 1.0825;
 let zipCodes = [];
+let pinVerified = false;
 
 export async function renderOrderForm(container, params) {
   const isEdit = !!params.id;
-  const [zips, settings, staffList, order] = await Promise.all([
+  const [zips, settings, staffList, catalogAddOns, order] = await Promise.all([
     api.get('/zip-codes'),
     api.get('/settings'),
     api.get('/staff'),
+    api.get('/add-ons'),
     isEdit ? api.get(`/orders/${params.id}`) : Promise.resolve(null),
   ]);
 
   zipCodes = zips;
+  availableAddOns = catalogAddOns;
   taxRate = Number(settings.taxRate) || 1.0825;
   selectedClient = order?.client || null;
   items = order
@@ -29,6 +41,19 @@ export async function renderOrderForm(container, params) {
         notes: i.notes || '',
       }))
     : [];
+  addOns = order
+    ? order.addOns.map((a) => ({
+        addOnId: a.addOnId,
+        kind: a.kind,
+        name: a.name,
+        unitPrice: Number(a.unitPrice),
+        quantity: a.quantity,
+        bannerColor: a.bannerColor || '',
+        bannerMessage: a.bannerMessage || '',
+        balloonOccasion: a.balloonOccasion || '',
+      }))
+    : [];
+  pinVerified = false;
 
   container.innerHTML = `
     <div class="page-header order-form-header">
@@ -45,6 +70,23 @@ export async function renderOrderForm(container, params) {
 
     <div class="order-form-cols">
       <div class="order-form-main">
+        <div class="card">
+          <h3>Delivery Date &amp; Time</h3>
+          <div class="grid-2">
+            <label>Delivery date *<input id="deliveryDate" type="date" required /></label>
+            <label>Delivery time *
+              <div style="display:flex;gap:0.4rem;">
+                <select id="deliveryTimeType" style="width:auto;">
+                  <option value="AT">At</option>
+                  <option value="BEFORE">Before</option>
+                  <option value="AFTER">After</option>
+                </select>
+                <input id="deliveryTime" placeholder="2:30 PM" required />
+              </div>
+            </label>
+          </div>
+        </div>
+
         <div class="card">
           <h3>Delivery</h3>
           <div class="radio-group">
@@ -72,20 +114,6 @@ export async function renderOrderForm(container, params) {
             <label>Name of person picking up<input id="pickupPersonName" /></label>
           </div>
           <label>Delivery notes<textarea id="deliveryNotes" rows="2"></textarea></label>
-
-          <div class="grid-2">
-            <label>Delivery date *<input id="deliveryDate" type="date" required /></label>
-            <label>Delivery time *
-              <div style="display:flex;gap:0.4rem;">
-                <select id="deliveryTimeType" style="width:auto;">
-                  <option value="AT">At</option>
-                  <option value="BEFORE">Before</option>
-                  <option value="AFTER">After</option>
-                </select>
-                <input id="deliveryTime" placeholder="2:30 PM" required />
-              </div>
-            </label>
-          </div>
         </div>
 
         <div class="card">
@@ -110,15 +138,17 @@ export async function renderOrderForm(container, params) {
               </select>
             </label>
           </div>
-          <div id="banner-fields" hidden class="grid-2">
-            <label>Banner color<input id="bannerColor" /></label>
-            <label>Banner message<input id="bannerMessage" /></label>
-          </div>
           <label>Message<textarea id="messageText" rows="2"></textarea></label>
           <div class="grid-2">
             <label>Signature<input id="messageFrom" /></label>
             <label class="checkbox-line" style="margin-top:1.6rem;"><input type="checkbox" id="messageAnon" /> Anonymous</label>
           </div>
+        </div>
+
+        <div class="card">
+          <h3>Add Ons</h3>
+          <div id="addon-catalog"></div>
+          <div id="addons-table" style="margin-top:0.75rem;"></div>
         </div>
       </div>
 
@@ -129,41 +159,6 @@ export async function renderOrderForm(container, params) {
             value="${selectedClient ? escapeHtml(`${selectedClient.firstName} ${selectedClient.lastName} — ${selectedClient.phoneCode} ${selectedClient.phone}`) : ''}" />
           <div id="client-search-results" class="search-results" hidden></div>
           <button type="button" id="toggle-new-client" class="btn btn-sm" style="margin-top:0.5rem;">+ New customer</button>
-          <div id="new-client-form" hidden style="margin-top:0.75rem;">
-            <div class="grid-2">
-              <label>Phone *
-                <div style="display:flex;gap:0.4rem;">
-                  <select id="nc-phoneCode" style="width:auto;flex:0 0 auto;">${countryCodeOptions('+1')}</select>
-                  <input id="nc-phone" required />
-                </div>
-              </label>
-              <label>Second phone
-                <div style="display:flex;gap:0.4rem;">
-                  <select id="nc-phone2Code" style="width:auto;flex:0 0 auto;">${countryCodeOptions('+1')}</select>
-                  <input id="nc-phone2" />
-                </div>
-              </label>
-              <label>First name *<input id="nc-firstName" required /></label>
-              <label>Second name<input id="nc-secondName" /></label>
-              <label>Last name *<input id="nc-lastName" required /></label>
-              <label>Email<input id="nc-email" type="email" /></label>
-              <label>Company<input id="nc-company" /></label>
-              <label>How did you hear about us?
-                <select id="nc-referral">
-                  <option value="">—</option>
-                  <option value="Recommended by a client">Recommended by a client</option>
-                  <option value="Google Maps">Google Maps</option>
-                  <option value="Instagram">Instagram</option>
-                  <option value="Facebook">Facebook</option>
-                  <option value="Passing by">Passing by</option>
-                  <option value="Google">Google</option>
-                  <option value="Other">Other</option>
-                </select>
-              </label>
-            </div>
-            <label>Notes<textarea id="nc-notes" rows="2"></textarea></label>
-            <button type="button" id="save-new-client" class="btn btn-primary btn-sm">Save customer</button>
-          </div>
         </div>
 
         <div class="card">
@@ -193,6 +188,7 @@ export async function renderOrderForm(container, params) {
 
         <div class="card">
           <h3>Assisted by</h3>
+          <p class="page-subtitle" style="margin-bottom:0.75rem;">PIN must be verified before the order can be saved.</p>
           <div class="grid-2">
             <label>Staff
               <select id="assistedById">${staffList.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')}</select>
@@ -211,6 +207,7 @@ export async function renderOrderForm(container, params) {
 
     <div id="receipt-wrap"></div>
     <div id="quick-add-modal-wrap"></div>
+    <div id="new-client-modal-wrap"></div>
   `;
 
   if (order) {
@@ -218,8 +215,6 @@ export async function renderOrderForm(container, params) {
     document.getElementById('messageText').value = order.messageText || '';
     document.getElementById('messageFrom').value = order.messageFrom || '';
     document.getElementById('messageAnon').checked = order.messageAnon;
-    document.getElementById('bannerColor').value = order.bannerColor || '';
-    document.getElementById('bannerMessage').value = order.bannerMessage || '';
     document.querySelector(`input[name="deliveryOption"][value="${order.deliveryOption}"]`).checked = true;
     document.getElementById('recipientName').value = order.recipientName || '';
     document.getElementById('recipientPhone').value = order.recipientPhone || '';
@@ -240,14 +235,12 @@ export async function renderOrderForm(container, params) {
     if (order.assistedById) document.getElementById('assistedById').value = order.assistedById;
   }
 
-  toggleOccasionFields();
   toggleDeliveryFields();
+  toggleAnonymous();
   renderItemsTable();
+  renderAddOnCatalog();
+  renderAddOnsTable();
   wireEvents(isEdit, params.id);
-}
-
-function toggleOccasionFields() {
-  document.getElementById('banner-fields').hidden = document.getElementById('occasion').value !== 'FUNERAL';
 }
 
 function toggleDeliveryFields() {
@@ -255,6 +248,13 @@ function toggleDeliveryFields() {
   document.getElementById('delivery-house-business').hidden = option === 'PICKUP';
   document.getElementById('delivery-business-only').hidden = option !== 'BUSINESS';
   document.getElementById('delivery-pickup').hidden = option !== 'PICKUP';
+}
+
+function toggleAnonymous() {
+  const anon = document.getElementById('messageAnon').checked;
+  const fromInput = document.getElementById('messageFrom');
+  fromInput.disabled = anon;
+  if (anon) fromInput.value = '';
 }
 
 function renderItemsTable() {
@@ -265,12 +265,14 @@ function renderItemsTable() {
     wrap.innerHTML = items
       .map(
         (item, i) => `
-      <div class="line-item-row">
-        <span>${escapeHtml(item.name)}</span>
-        <input type="number" min="1" value="${item.quantity}" data-idx="${i}" data-field="quantity" />
-        <input type="number" step="0.01" value="${item.unitPrice}" data-idx="${i}" data-field="unitPrice" />
-        <input type="text" placeholder="notes" value="${escapeHtml(item.notes)}" data-idx="${i}" data-field="notes" />
-        <button type="button" class="btn btn-sm btn-danger" data-remove="${i}">✕</button>
+      <div class="order-line-item">
+        <div class="line-item-row" style="grid-template-columns:2fr 70px 90px 40px;">
+          <span>${escapeHtml(item.name)}</span>
+          <input type="number" min="1" value="${item.quantity}" data-idx="${i}" data-field="quantity" />
+          <input type="number" step="0.01" value="${item.unitPrice}" data-idx="${i}" data-field="unitPrice" />
+          <button type="button" class="btn btn-sm btn-danger" data-remove="${i}">✕</button>
+        </div>
+        <textarea class="line-item-notes" placeholder="Notes for the florist (specifications)…" data-idx="${i}" data-field="notes">${escapeHtml(item.notes)}</textarea>
       </div>`
       )
       .join('');
@@ -311,8 +313,146 @@ function openQuickAddModal() {
   });
 }
 
+function openNewClientModal() {
+  const wrap = document.getElementById('new-client-modal-wrap');
+  wrap.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal" style="max-width:640px;">
+        <h3>New customer</h3>
+        <div class="grid-2">
+          <label>Phone *
+            <div class="phone-input-row">
+              <select id="nc-phoneCode" class="phone-code-select">${countryCodeOptions('+1')}</select>
+              <input id="nc-phone" class="phone-input" required />
+            </div>
+          </label>
+          <label>Second phone
+            <div class="phone-input-row">
+              <select id="nc-phone2Code" class="phone-code-select">${countryCodeOptions('+1')}</select>
+              <input id="nc-phone2" class="phone-input" />
+            </div>
+          </label>
+          <label>First name *<input id="nc-firstName" required /></label>
+          <label>Second name<input id="nc-secondName" /></label>
+          <label>Last name *<input id="nc-lastName" required /></label>
+          <label>Email<input id="nc-email" type="email" /></label>
+          <label>Company<input id="nc-company" /></label>
+          <label>How did you hear about us?
+            <select id="nc-referral">
+              <option value="">—</option>
+              <option value="Recommended by a client">Recommended by a client</option>
+              <option value="Google Maps">Google Maps</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Passing by">Passing by</option>
+              <option value="Google">Google</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+        </div>
+        <label>Notes<textarea id="nc-notes" rows="2"></textarea></label>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="nc-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="nc-save">Save customer</button>
+        </div>
+        <p id="nc-error" class="error-text" hidden></p>
+      </div>
+    </div>
+  `;
+  document.getElementById('nc-phone').focus();
+  document.getElementById('nc-cancel').addEventListener('click', () => (wrap.innerHTML = ''));
+  document.getElementById('nc-save').addEventListener('click', async () => {
+    const body = {
+      phoneCode: document.getElementById('nc-phoneCode').value,
+      phone: document.getElementById('nc-phone').value,
+      phone2Code: document.getElementById('nc-phone2Code').value,
+      phone2: document.getElementById('nc-phone2').value,
+      firstName: document.getElementById('nc-firstName').value,
+      secondName: document.getElementById('nc-secondName').value,
+      lastName: document.getElementById('nc-lastName').value,
+      email: document.getElementById('nc-email').value,
+      company: document.getElementById('nc-company').value,
+      referral: document.getElementById('nc-referral').value,
+      notes: document.getElementById('nc-notes').value,
+    };
+    try {
+      const client = await api.post('/clients', body);
+      selectedClient = client;
+      document.getElementById('client-search').value = `${client.firstName} ${client.lastName} — ${client.phoneCode} ${client.phone}`;
+      wrap.innerHTML = '';
+    } catch (err) {
+      const e = document.getElementById('nc-error');
+      e.textContent = err.message;
+      e.hidden = false;
+    }
+  });
+}
+
+function renderAddOnCatalog() {
+  const wrap = document.getElementById('addon-catalog');
+  const groups = ADDON_GROUPS.map(([kind, label]) => [kind, label, availableAddOns.filter((a) => a.kind === kind)]).filter(
+    ([, , entries]) => entries.length
+  );
+  if (!groups.length) {
+    wrap.innerHTML = '<p class="empty-state">No add-ons in the catalog yet.</p>';
+    return;
+  }
+  wrap.innerHTML = groups
+    .map(
+      ([, label, entries]) => `
+    <div class="addon-group">
+      <div class="addon-group-label">${escapeHtml(label)}</div>
+      ${entries
+        .map(
+          (a) => `
+        <div class="addon-catalog-row">
+          <span>${escapeHtml(a.name)}${a.size ? ` — ${escapeHtml(a.size)}` : ''}</span>
+          <span>${money(a.price)}</span>
+          <button type="button" class="btn btn-sm" data-add-addon="${a.id}">+ Add</button>
+        </div>`
+        )
+        .join('')}
+    </div>`
+    )
+    .join('');
+}
+
+function renderAddOnsTable() {
+  const wrap = document.getElementById('addons-table');
+  if (!addOns.length) {
+    wrap.innerHTML = '<p class="empty-state">No add-ons added yet.</p>';
+  } else {
+    wrap.innerHTML = addOns
+      .map((a, i) => {
+        const extra =
+          a.kind === 'BANNER'
+            ? `<div class="grid-2">
+                <label>Banner color<input type="text" value="${escapeHtml(a.bannerColor)}" data-idx="${i}" data-field="bannerColor" /></label>
+                <label>Banner message<input type="text" value="${escapeHtml(a.bannerMessage)}" data-idx="${i}" data-field="bannerMessage" /></label>
+              </div>`
+            : a.kind === 'BALLOONS'
+              ? `<label>Occasion<input type="text" value="${escapeHtml(a.balloonOccasion)}" data-idx="${i}" data-field="balloonOccasion" /></label>`
+              : '';
+        return `
+      <div class="addon-line-item">
+        <div class="line-item-row" style="grid-template-columns:2fr 70px 90px 40px;">
+          <span>✓ ${escapeHtml(a.name)}</span>
+          <input type="number" min="1" value="${a.quantity}" data-idx="${i}" data-field="quantity" />
+          <input type="number" step="0.01" value="${a.unitPrice}" data-idx="${i}" data-field="unitPrice" />
+          <button type="button" class="btn btn-sm btn-danger" data-remove-addon="${i}">✕</button>
+        </div>
+        ${extra}
+      </div>`;
+      })
+      .join('');
+  }
+  updateTotalsPreview();
+}
+
 function updateTotalsPreview() {
-  const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+  const itemsSubtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+  const addOnsSubtotal = addOns.reduce((sum, a) => sum + a.unitPrice * a.quantity, 0);
+  const subtotal = itemsSubtotal + addOnsSubtotal;
   const fee = Number(document.getElementById('deliveryFee')?.value) || 0;
   const taxExempt = document.getElementById('taxExempt')?.checked;
   const tax = taxExempt ? 0 : (subtotal + fee) * (taxRate - 1);
@@ -329,8 +469,6 @@ function updateTotalsPreview() {
 }
 
 function wireEvents(isEdit, orderId) {
-  const container = document;
-
   // Client search
   let clientSearchTimer;
   document.getElementById('client-search').addEventListener('input', (e) => {
@@ -360,33 +498,7 @@ function wireEvents(isEdit, orderId) {
     document.getElementById('client-search-results').hidden = true;
   });
 
-  document.getElementById('toggle-new-client').addEventListener('click', () => {
-    document.getElementById('new-client-form').hidden = !document.getElementById('new-client-form').hidden;
-  });
-
-  document.getElementById('save-new-client').addEventListener('click', async () => {
-    const body = {
-      phoneCode: document.getElementById('nc-phoneCode').value,
-      phone: document.getElementById('nc-phone').value,
-      phone2Code: document.getElementById('nc-phone2Code').value,
-      phone2: document.getElementById('nc-phone2').value,
-      firstName: document.getElementById('nc-firstName').value,
-      secondName: document.getElementById('nc-secondName').value,
-      lastName: document.getElementById('nc-lastName').value,
-      email: document.getElementById('nc-email').value,
-      company: document.getElementById('nc-company').value,
-      referral: document.getElementById('nc-referral').value,
-      notes: document.getElementById('nc-notes').value,
-    };
-    try {
-      const client = await api.post('/clients', body);
-      selectedClient = client;
-      document.getElementById('client-search').value = `${client.firstName} ${client.lastName} — ${client.phoneCode} ${client.phone}`;
-      document.getElementById('new-client-form').hidden = true;
-    } catch (err) {
-      alert(err.message);
-    }
-  });
+  document.getElementById('toggle-new-client').addEventListener('click', openNewClientModal);
 
   // Product search
   let productSearchTimer;
@@ -435,8 +547,8 @@ function wireEvents(isEdit, orderId) {
     renderItemsTable();
   });
 
-  document.getElementById('occasion').addEventListener('change', toggleOccasionFields);
   document.querySelectorAll('input[name="deliveryOption"]').forEach((r) => r.addEventListener('change', toggleDeliveryFields));
+  document.getElementById('messageAnon').addEventListener('change', toggleAnonymous);
 
   document.getElementById('zip').addEventListener('change', (e) => {
     const opt = e.target.selectedOptions[0];
@@ -446,15 +558,60 @@ function wireEvents(isEdit, orderId) {
   document.getElementById('deliveryFee').addEventListener('input', updateTotalsPreview);
   document.getElementById('taxExempt').addEventListener('change', updateTotalsPreview);
 
+  document.getElementById('addon-catalog').addEventListener('click', (e) => {
+    const id = e.target.dataset.addAddon;
+    if (!id) return;
+    const catalogEntry = availableAddOns.find((a) => a.id === id);
+    if (!catalogEntry) return;
+    addOns.push({
+      addOnId: catalogEntry.id,
+      kind: catalogEntry.kind,
+      name: catalogEntry.name,
+      unitPrice: Number(catalogEntry.price),
+      quantity: 1,
+      bannerColor: '',
+      bannerMessage: '',
+      balloonOccasion: '',
+    });
+    renderAddOnsTable();
+  });
+
+  document.getElementById('addons-table').addEventListener('input', (e) => {
+    const idx = e.target.dataset.idx;
+    const field = e.target.dataset.field;
+    if (idx === undefined) return;
+    const numeric = field === 'quantity' || field === 'unitPrice';
+    addOns[idx][field] = numeric ? Number(e.target.value) : e.target.value;
+    if (numeric) updateTotalsPreview();
+  });
+
+  document.getElementById('addons-table').addEventListener('click', (e) => {
+    const idx = e.target.dataset.removeAddon;
+    if (idx === undefined) return;
+    addOns.splice(Number(idx), 1);
+    renderAddOnsTable();
+  });
+
+  document.getElementById('assistedById').addEventListener('change', () => {
+    pinVerified = false;
+    document.getElementById('pin-status').textContent = '';
+  });
+  document.getElementById('assistedPin').addEventListener('input', () => {
+    pinVerified = false;
+    document.getElementById('pin-status').textContent = '';
+  });
+
   document.getElementById('verify-pin-btn').addEventListener('click', async () => {
     const staffId = document.getElementById('assistedById').value;
     const pin = document.getElementById('assistedPin').value;
     const statusEl = document.getElementById('pin-status');
     try {
       const { valid } = await api.post(`/staff/${staffId}/verify-pin`, { pin });
+      pinVerified = valid;
       statusEl.textContent = valid ? '✓ Verified' : '✗ Incorrect PIN';
       statusEl.style.color = valid ? 'var(--success)' : 'var(--danger)';
     } catch (err) {
+      pinVerified = false;
       statusEl.textContent = err.message;
       statusEl.style.color = 'var(--danger)';
     }
@@ -472,6 +629,7 @@ async function saveOrder(isEdit, orderId) {
 
   if (!selectedClient?.id) return (errorEl.textContent = 'Select or create a customer first.');
   if (!items.length) return (errorEl.textContent = 'Add at least one product.');
+  if (!pinVerified) return (errorEl.textContent = 'Verify the assisting staff member\'s PIN before saving.');
 
   const body = {
     clientId: selectedClient.id,
@@ -479,8 +637,6 @@ async function saveOrder(isEdit, orderId) {
     deliveryTimeType: document.getElementById('deliveryTimeType').value,
     deliveryTime: document.getElementById('deliveryTime').value,
     occasion: document.getElementById('occasion').value,
-    bannerColor: document.getElementById('bannerColor').value,
-    bannerMessage: document.getElementById('bannerMessage').value,
     messageText: document.getElementById('messageText').value,
     messageFrom: document.getElementById('messageFrom').value,
     messageAnon: document.getElementById('messageAnon').checked,
@@ -505,6 +661,16 @@ async function saveOrder(isEdit, orderId) {
       quantity: i.quantity,
       unitPrice: i.unitPrice,
       notes: i.notes,
+    })),
+    addOns: addOns.map((a) => ({
+      addOnId: a.addOnId,
+      kind: a.kind,
+      name: a.name,
+      quantity: a.quantity,
+      unitPrice: a.unitPrice,
+      bannerColor: a.bannerColor,
+      bannerMessage: a.bannerMessage,
+      balloonOccasion: a.balloonOccasion,
     })),
   };
 

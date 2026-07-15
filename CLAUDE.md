@@ -21,25 +21,26 @@ A point-of-sale + website backend for a flower shop. It has two audiences: **sta
 ## Domain model (from spec)
 
 ### Orders
-The core entity. Created via a multi-step form: customer lookup/create → products (multiple, with notes) → occasion (birthday, anniversary, funeral, graduation, love, other; funeral adds banner color/message) → gift message (+ signature or anonymous) → delivery info → payment → notification method → staff attribution (dropdown + PIN).
+The core entity. Created via a multi-step form: delivery date/time → delivery info → customer lookup/create → products (multiple, each with a florist notes textarea) → occasion (birthday, anniversary, funeral, graduation, love, other) → gift message (+ signature, disabled when anonymous) → add ons → payment → notification method → staff attribution (dropdown + PIN).
 
 - **Delivery types**: house/apt, business/work, or pickup — each with its own required fields (recipient name/phone, address, zip, notes; business adds business name + dept).
-- **Payment**: card, cash, check, zelle, cashapp. Total = products + delivery fee (looked up by zip code, or custom) + tax (rate 1.0825). Tax-exempt checkbox zeroes tax.
+- **Payment**: card, cash, check, zelle, cashapp. Total = products + add ons + delivery fee (looked up by zip code, or custom) + tax (rate 1.0825). Tax-exempt checkbox zeroes tax.
 - **Order status flow**: `making arrangement` → `pending delivery` → `completed`.
 - Orders list oldest → newest; each row supports view (full detail + edit) and submit payment (photo proof; cash orders additionally capture bill breakdown).
-- Receipt must show shop info, order number, delivery date/time, customer name + phone, delivery info, product photos, banner info (if funeral), product notes (if any), and total with delivery + tax broken out.
+- Receipt must show shop info, order number, delivery date/time, customer name + phone, delivery info, product photos, product notes (if any), add ons (if any, with banner color/message or balloon occasion), and total with delivery + tax broken out.
 
 ### Customers
-Phone is the primary identifier (+ optional second phone), each with its own country dial code — defaults to USA (`+1`), with Mexico (`+52`) pinned alongside it and the full country list available (El Paso is a border city). Also: first/second/last name, client-since date (auto), email, company, notes, referral source. **Client category is system-only** (not customer-facing), tiered by order count: Silver (10+), Gold (20+), Diamond (30+).
+Phone is the primary identifier (+ optional second phone), each with its own country dial code — defaults to USA (`+1`), with Mexico (`+52`) pinned alongside it and the full country list available (El Paso is a border city). Also: first/second/last name, client-since date (auto), email, company, notes, referral source. **Client category is system-only** (not customer-facing), tiered by order count: Silver (10+), Gold (20+), Diamond (30+). Added via a modal from Create Order or the Customers page.
 
 ### Products / Categories / Inventory
 - Products have code, name, category (multi), up to 3 photos, size (L×W inches), price, description, site visibility, and a **recipe** (list of inventory items + quantities) used to build the arrangement.
 - Categories: name, photo, visibility, product membership.
 - Inventory: searchable by code/name, grouped by category, quantity is editable. Adding inventory captures category (Bases, flowers, Ribbons, others), size, unit (piece/roll/box/bunch/bag), units per purchase, price, derived unit price, notes, and provider.
+- **Add Ons**: a separate catalog, independent of Products/Categories, for non-arrangement extras attachable to any order regardless of occasion — Banner, Balloons, Teddy Bears, Chocolates. Each catalog entry has kind, name, optional size, and price; multiple priced entries per kind are allowed (e.g. several teddy bear sizes). Banner and Balloons additionally capture free-text detail per order line (banner color/message, balloon occasion) when added to an order — Teddy Bears/Chocolates don't need order-time input beyond quantity.
 - Zip codes: list of delivery zones with a price each (used by the order delivery-fee dropdown).
 
 ### Operational workflow
-- **Making arrangements**: queue of orders sorted by nearest delivery date/time, showing product photo + recipe + notes. "Completed" button moves the order to `pending delivery`.
+- **Making arrangements**: queue of orders sorted by nearest delivery date/time, showing product photo + recipe + notes, plus any add ons (banner color/message, balloon occasion, teddy bear/chocolates). "Completed" button moves the order to `pending delivery`.
 - **Deliveries**: shows only orders with a physical delivery (excludes pickup), sorted for the driver. Confirming a delivery requires name of recipient + photo proof, which marks the order `completed`.
 - **Tasks**: ad-hoc to-dos with frequency (one time/monthly/yearly), due date, assignee (staff dropdown), and completed/pending views.
 - **Dashboard**: today's + tomorrow's deliveries (earliest first), open tasks, reminders (customers whose birthday/anniversary order was delivered ~2 days before, one year prior), pending payments, and a quick expense-add.
@@ -74,7 +75,7 @@ How Karel's staff copy reads across the POS:
 - **Person**: neutral/system voice — no "I" or "you"; UI speaks in nouns and verbs ("Today's Deliveries", "Pending Payments", "Making arrangement").
 - **Casing**: Title Case for page titles, card headers and nav ("Making Arrangements", "Zip Codes"). UPPERCASE + wide tracking for eyebrow labels, table headers and status pills. Sentence case for helper text and messages.
 - **Status language**: fixed vocabulary — order status Making arrangement → Pending delivery → Completed (or Cancelled); payment Pending → Submitted → Confirmed; client tiers Silver / Gold / Diamond (system-only, never shown to customers).
-- **Numbers & data**: money as `$84.00`; order numbers day-scoped `20260704-0001`; dates short ("Jul 4"); tax shown as `8.25%`.
+- **Numbers & data**: money as `$84.00`; order numbers sequential `KE-100`, `KE-101`…; dates short ("Jul 4"); tax shown as `8.25%`.
 - **Emoji**: none in the refreshed UI. The original used a 🌹; this system replaces decorative emoji with a floral glyph (❀ / ✿) or the logo. Keep emoji out of production copy.
 - **Vibe**: calm, boutique, considered — "every arrangement, made by hand." Luxury restraint, not exclamation. Avoid marketing hype in an internal tool.
 

@@ -145,6 +145,26 @@ model RecipeItem {
   @@unique([productId, inventoryItemId])
 }
 
+enum AddOnKind {
+  BANNER
+  BALLOONS
+  TEDDY_BEAR
+  CHOCOLATES
+}
+
+model AddOn {
+  id        String    @id @default(cuid())
+  kind      AddOnKind
+  name      String
+  size      String?
+  price     Decimal   @db.Decimal(10, 2)
+  visible   Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  orderAddOns OrderAddOn[]
+}
+
 model ZipCode {
   id        String   @id @default(cuid())
   zip       String   @unique
@@ -217,8 +237,6 @@ model Order {
 
   // Occasion & message
   occasion      Occasion @default(OTHER)
-  bannerColor   String? // funeral only
-  bannerMessage String? // funeral only
   messageText   String?
   messageFrom   String?
   messageAnon   Boolean  @default(false)
@@ -265,8 +283,9 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items OrderItem[]
-  tasks Task[]
+  items  OrderItem[]
+  addOns OrderAddOn[]
+  tasks  Task[]
 }
 
 model OrderItem {
@@ -281,6 +300,26 @@ model OrderItem {
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
+}
+
+model OrderAddOn {
+  id      String    @id @default(cuid())
+  orderId String
+  addOnId String
+  kind    AddOnKind // snapshot of AddOn.kind at order time
+  name    String    // snapshot of AddOn.name at order time
+
+  quantity  Int     @default(1)
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  bannerColor     String? // BANNER only
+  bannerMessage   String? // BANNER only
+  balloonOccasion String? // BALLOONS only
+
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  addOn AddOn @relation(fields: [addOnId], references: [id])
 }
 
 // ── Tasks ─────────────────────────────────────────────────────────
