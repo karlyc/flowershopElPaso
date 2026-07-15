@@ -17,7 +17,7 @@ router.get('/', requireAuth, async (req, res, next) => {
   try {
     const { search, categoryId } = req.query;
     const where = {};
-    if (categoryId) where.categoryId = categoryId;
+    if (categoryId) where.categories = { some: { id: categoryId } };
     if (search) {
       where.OR = [
         { code: { contains: search, mode: 'insensitive' } },
@@ -28,7 +28,7 @@ router.get('/', requireAuth, async (req, res, next) => {
 
     const products = await prisma.product.findMany({
       where,
-      include: { category: true },
+      include: { categories: true },
       orderBy: { name: 'asc' },
     });
     res.json(products);
@@ -41,7 +41,7 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const product = await prisma.product.findUnique({
       where: { id: req.params.id },
-      include: { category: true, recipe: { include: { inventoryItem: true } } },
+      include: { categories: true, recipe: { include: { inventoryItem: true } } },
     });
     if (!product) return res.status(404).json({ error: 'Product not found' });
     res.json(product);
@@ -52,10 +52,11 @@ router.get('/:id', requireAuth, async (req, res, next) => {
 
 router.post('/', requireAuth, requireOffice, uploadProductPhoto.fields(photoFields), async (req, res, next) => {
   try {
-    const { code, name, description, price, widthIn, heightIn, visible, categoryId } = req.body;
+    const { code, name, description, price, widthIn, heightIn, visible, categoryIds } = req.body;
     if (!code || !name || !price) {
       return res.status(400).json({ error: 'code, name, and price are required' });
     }
+    const ids = categoryIds ? JSON.parse(categoryIds) : [];
 
     const files = req.files || {};
     const product = await prisma.product.create({
@@ -67,11 +68,12 @@ router.post('/', requireAuth, requireOffice, uploadProductPhoto.fields(photoFiel
         widthIn: widthIn || undefined,
         heightIn: heightIn || undefined,
         visible: visible === undefined ? true : visible === 'true' || visible === true,
-        categoryId: categoryId || undefined,
+        categories: { connect: ids.map((id) => ({ id })) },
         photo1Url: files.photo1?.[0] ? `/uploads/products/${files.photo1[0].filename}` : undefined,
         photo2Url: files.photo2?.[0] ? `/uploads/products/${files.photo2[0].filename}` : undefined,
         photo3Url: files.photo3?.[0] ? `/uploads/products/${files.photo3[0].filename}` : undefined,
       },
+      include: { categories: true },
     });
     res.status(201).json(product);
   } catch (err) {
@@ -82,10 +84,13 @@ router.post('/', requireAuth, requireOffice, uploadProductPhoto.fields(photoFiel
 
 router.put('/:id', requireAuth, requireOffice, uploadProductPhoto.fields(photoFields), async (req, res, next) => {
   try {
-    const { code, name, description, price, widthIn, heightIn, visible, categoryId } = req.body;
+    const { code, name, description, price, widthIn, heightIn, visible, categoryIds } = req.body;
     const files = req.files || {};
 
-    const data = { code, name, description, price, categoryId: categoryId || undefined };
+    const data = { code, name, description, price };
+    if (categoryIds !== undefined) {
+      data.categories = { set: JSON.parse(categoryIds).map((id) => ({ id })) };
+    }
     if (widthIn !== undefined) data.widthIn = widthIn || null;
     if (heightIn !== undefined) data.heightIn = heightIn || null;
     if (visible !== undefined) data.visible = visible === 'true' || visible === true;
@@ -93,7 +98,7 @@ router.put('/:id', requireAuth, requireOffice, uploadProductPhoto.fields(photoFi
     if (files.photo2?.[0]) data.photo2Url = `/uploads/products/${files.photo2[0].filename}`;
     if (files.photo3?.[0]) data.photo3Url = `/uploads/products/${files.photo3[0].filename}`;
 
-    const product = await prisma.product.update({ where: { id: req.params.id }, data });
+    const product = await prisma.product.update({ where: { id: req.params.id }, data, include: { categories: true } });
     res.json(product);
   } catch (err) {
     if (err.code === 'P2002') return res.status(409).json({ error: 'A product with this code already exists' });

@@ -88,11 +88,10 @@ model Product {
   photo2Url   String?
   photo3Url   String?
   visible     Boolean  @default(true)
-  categoryId  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  category   Category?    @relation(fields: [categoryId], references: [id])
+  categories Category[]
   recipe     RecipeItem[]
   orderItems OrderItem[]
 }

@@ -1,6 +1,8 @@
 // js/views/categories.js
-import { api } from '../api.js';
+import { api, API_BASE } from '../api.js';
 import { escapeHtml } from '../format.js';
+
+const UPLOADS_ORIGIN = API_BASE.replace(/\/api\/?$/, '');
 
 export async function renderCategories(container) {
   container.innerHTML = `
@@ -19,11 +21,17 @@ export async function renderCategories(container) {
       wrap.innerHTML = '<p class="empty-state">No categories yet.</p>';
       return;
     }
-    wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Name</th><th>Visible</th><th></th></tr></thead><tbody>
+    wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th></th><th>Name</th><th>Products</th><th>Visible</th><th></th></tr></thead><tbody>
       ${categories
         .map(
           (c) => `<tr>
+        <td>${
+          c.photoUrl
+            ? `<img src="${UPLOADS_ORIGIN}${c.photoUrl}" style="width:36px;height:36px;object-fit:cover;border-radius:var(--radius-md);" />`
+            : `<div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--sage-100);color:var(--forest-700);display:flex;align-items:center;justify-content:center;font-size:16px;">❀</div>`
+        }</td>
         <td>${escapeHtml(c.name)}</td>
+        <td>${c._count?.products ?? 0}</td>
         <td>${c.visible ? '<span class="badge badge-green">Yes</span>' : '<span class="badge badge-gray">No</span>'}</td>
         <td><button class="btn btn-sm" data-edit="${c.id}">Edit</button> <button class="btn btn-sm btn-danger" data-delete="${c.id}">Delete</button></td>
       </tr>`
@@ -53,8 +61,10 @@ function openModal(category, onSaved) {
     <div class="modal-backdrop">
       <div class="modal">
         <h3>${category ? 'Edit' : 'Add'} category</h3>
+        ${category?.photoUrl ? `<img src="${UPLOADS_ORIGIN}${category.photoUrl}" style="width:64px;height:64px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:0.75rem;" />` : ''}
         <label>Name<input id="c-name" value="${escapeHtml(category?.name || '')}" required /></label>
         <label>Description<textarea id="c-description" rows="2">${escapeHtml(category?.description || '')}</textarea></label>
+        <label>Photo<input id="c-photo" type="file" accept="image/*" /></label>
         <label class="checkbox-line"><input type="checkbox" id="c-visible" ${category?.visible !== false ? 'checked' : ''} /> Visible</label>
         <div class="modal-actions">
           <button class="btn" id="c-cancel">Cancel</button>
@@ -72,6 +82,8 @@ function openModal(category, onSaved) {
     fd.append('name', name);
     fd.append('description', document.getElementById('c-description').value);
     fd.append('visible', document.getElementById('c-visible').checked);
+    const photoFile = document.getElementById('c-photo').files[0];
+    if (photoFile) fd.append('photo', photoFile);
     try {
       if (category) await api.put(`/categories/${category.id}`, fd);
       else await api.post('/categories', fd);

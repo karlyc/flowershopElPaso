@@ -8,7 +8,10 @@ const router = express.Router();
 
 router.get('/', requireAuth, async (_req, res, next) => {
   try {
-    const categories = await prisma.category.findMany({ orderBy: { name: 'asc' } });
+    const categories = await prisma.category.findMany({
+      orderBy: { name: 'asc' },
+      include: { _count: { select: { products: true } } },
+    });
     res.json(categories);
   } catch (err) {
     next(err);

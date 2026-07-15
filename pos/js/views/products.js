@@ -29,7 +29,7 @@ export async function renderProducts(container) {
       return;
     }
     wrap.innerHTML = `<div class="table-wrap"><table><thead><tr>
-      <th></th><th>Code</th><th>Name</th><th>Category</th><th>Price</th><th>Visible</th><th></th>
+      <th></th><th>Code</th><th>Name</th><th>Categories</th><th>Price</th><th>Visible</th><th></th>
     </tr></thead><tbody>
       ${products
         .map(
@@ -41,7 +41,7 @@ export async function renderProducts(container) {
         }</td>
         <td>${escapeHtml(p.code)}</td>
         <td>${escapeHtml(p.name)}</td>
-        <td>${escapeHtml(p.category?.name || '—')}</td>
+        <td>${escapeHtml(p.categories?.map((c) => c.name).join(', ') || '—')}</td>
         <td>${money(p.price)}</td>
         <td>${p.visible ? '<span class="badge badge-green">Yes</span>' : '<span class="badge badge-gray">No</span>'}</td>
         <td><button class="btn btn-sm" data-edit="${p.id}">Edit</button> <button class="btn btn-sm btn-danger" data-delete="${p.id}">Delete</button></td>
@@ -91,12 +91,18 @@ async function openModal(product, categories, onSaved) {
           <label>Code *<input id="p-code" value="${escapeHtml(product?.code || '')}" required /></label>
           <label>Name *<input id="p-name" value="${escapeHtml(product?.name || '')}" required /></label>
           <label>Price *<input id="p-price" type="number" step="0.01" value="${product?.price || ''}" required /></label>
-          <label>Category
-            <select id="p-categoryId"><option value="">—</option>${categories.map((c) => `<option value="${c.id}" ${product?.categoryId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}</select>
-          </label>
           <label>Width (in)<input id="p-widthIn" type="number" step="0.1" value="${product?.widthIn || ''}" /></label>
           <label>Height (in)<input id="p-heightIn" type="number" step="0.1" value="${product?.heightIn || ''}" /></label>
           <label class="checkbox-line" style="margin-top:1.6rem;"><input type="checkbox" id="p-visible" ${product?.visible !== false ? 'checked' : ''} /> Visible on site</label>
+        </div>
+        <label>Categories</label>
+        <div id="p-categories" style="display:flex;flex-wrap:wrap;gap:0.4rem 1.2rem;margin-bottom:0.75rem;">
+          ${categories
+            .map(
+              (c) =>
+                `<label class="checkbox-line" style="margin-bottom:0.2rem;"><input type="checkbox" value="${c.id}" ${product?.categories?.some((pc) => pc.id === c.id) ? 'checked' : ''} /> ${escapeHtml(c.name)}</label>`
+            )
+            .join('')}
         </div>
         <label>Description<textarea id="p-description" rows="2">${escapeHtml(product?.description || '')}</textarea></label>
         <div class="grid-3">
@@ -142,7 +148,8 @@ async function openModal(product, categories, onSaved) {
     fd.append('code', code);
     fd.append('name', name);
     fd.append('price', price);
-    fd.append('categoryId', document.getElementById('p-categoryId').value);
+    const categoryIds = Array.from(document.querySelectorAll('#p-categories input:checked')).map((el) => el.value);
+    fd.append('categoryIds', JSON.stringify(categoryIds));
     fd.append('widthIn', document.getElementById('p-widthIn').value);
     fd.append('heightIn', document.getElementById('p-heightIn').value);
     fd.append('visible', document.getElementById('p-visible').checked);
