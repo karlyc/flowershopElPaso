@@ -96,8 +96,10 @@ export async function renderOrderDetail(container, params) {
 
     <div class="page-header">
       <h2>Order ${escapeHtml(order.orderNumber)}
-        <span class="badge ${STATUS_BADGE[order.orderStatus]}">${titleCase(order.orderStatus)}</span>
-        <span class="badge ${PAY_BADGE[order.paymentStatus]}">${titleCase(order.paymentStatus)}</span>
+        <span class="no-print">
+          <span class="badge ${STATUS_BADGE[order.orderStatus]}">${titleCase(order.orderStatus)}</span>
+          <span class="badge ${PAY_BADGE[order.paymentStatus]}">${titleCase(order.paymentStatus)}</span>
+        </span>
       </h2>
       <div class="toolbar no-print">
         <a href="#/orders/${order.id}/edit" class="btn">Edit</a>
