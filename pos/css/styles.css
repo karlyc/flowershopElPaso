@@ -522,10 +522,28 @@ tr:hover td { background: var(--surface-sunken); }
 .receipt-row { display: flex; justify-content: space-between; padding: 3px 0; }
 .receipt-photos img { width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-md); margin-right: 4px; }
 
+.delivery-confirmation { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start; }
+.delivery-confirmation p { margin: 0; }
+.delivery-photo { width: 180px; height: 180px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border); }
+
+.delivery-copy { margin-top: 2rem; padding-top: 2rem; border-top: 2px dashed var(--border); }
+
+.delivery-signoff { display: flex; gap: 2rem; }
+.delivery-signoff > div { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+.delivery-signoff span:first-child {
+  color: var(--text-muted);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+.delivery-signoff .signoff-line { border-bottom: 1px solid var(--stone-500); height: 1.75rem; }
+
 @media print {
   .sidebar, .topbar, .no-print { display: none !important; }
   .content { padding: 0; }
   body { background: #fff; }
+  .delivery-copy { page-break-before: always; border-top: none; padding-top: 0; margin-top: 0; }
 }
 
 @media (max-width: 860px) {

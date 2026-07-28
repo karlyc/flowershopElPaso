@@ -1,6 +1,6 @@
 // js/views/orders.js — Orders list + detail/receipt/payment
 import { api, API_BASE } from '../api.js';
-import { money, dateShort, titleCase, escapeHtml } from '../format.js';
+import { money, dateShort, dateTimeShort, titleCase, escapeHtml } from '../format.js';
 import { state } from '../state.js';
 
 const UPLOADS_ORIGIN = API_BASE.replace(/\/api\/?$/, '');
@@ -155,6 +155,60 @@ export async function renderOrderDetail(container, params) {
       <div class="receipt-row"><span>Tax</span><span>${money(order.tax)}</span></div>
       <div class="receipt-row" style="font-weight:700;"><span>Total</span><span>${money(order.total)}</span></div>
       ${order.paymentProofUrl ? `<p><a href="${UPLOADS_ORIGIN}${order.paymentProofUrl}" target="_blank">View payment proof</a></p>` : ''}
+    </div>
+
+    <div class="card no-print">
+      <h3>Delivery Confirmation</h3>
+      ${
+        order.deliveredAt
+          ? `<div class="delivery-confirmation">
+              <p><strong>Received by</strong><br/>${escapeHtml(order.receivedByName || '—')}</p>
+              <p><strong>Delivered</strong><br/>${dateTimeShort(order.deliveredAt)}</p>
+              ${
+                order.deliveryPhotoUrl
+                  ? `<a href="${UPLOADS_ORIGIN}${order.deliveryPhotoUrl}" target="_blank"><img class="delivery-photo" src="${UPLOADS_ORIGIN}${order.deliveryPhotoUrl}" alt="Delivery proof photo" /></a>`
+                  : '<p class="empty-state">No photo captured.</p>'
+              }
+            </div>`
+          : '<p class="empty-state">Not yet delivered.</p>'
+      }
+    </div>
+
+    <div class="delivery-copy">
+      <div class="page-header">
+        <h2>Order ${escapeHtml(order.orderNumber)}</h2>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Customer</h3>
+          <p><a href="#/customers/${order.client.id}">${escapeHtml(order.client.firstName)} ${escapeHtml(order.client.lastName)}</a><br/>
+          ${escapeHtml(order.client.phone)}</p>
+        </div>
+        <div class="card">
+          <h3>Delivery</h3>
+          <p>${dateShort(order.deliveryDate)} — ${escapeHtml(order.deliveryTimeType)} ${escapeHtml(order.deliveryTime)}<br/>
+          ${titleCase(order.deliveryOption)}${order.address ? ' — ' + escapeHtml(order.address) : ''}${order.zip ? ', ' + escapeHtml(order.zip) : ''}<br/>
+          ${order.recipientName ? `Recipient: ${escapeHtml(order.recipientName)} ${escapeHtml(order.recipientPhone || '')}` : ''}
+          ${order.businessName ? `<br/>Business: ${escapeHtml(order.businessName)} (${escapeHtml(order.businessDept || '')})` : ''}
+          ${order.pickupPersonName ? `<br/>Picking up: ${escapeHtml(order.pickupPersonName)}` : ''}
+          ${order.deliveryNotes ? `<br/>Notes: ${escapeHtml(order.deliveryNotes)}` : ''}</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Products</h3>
+        <table><thead><tr><th>Item</th><th>Qty</th><th>Notes</th></tr></thead><tbody>
+          ${order.items
+            .map((i) => `<tr><td>${escapeHtml(i.product?.name || i.customName)}</td><td>${i.quantity}</td><td>${escapeHtml(i.notes || '')}</td></tr>`)
+            .join('')}
+        </tbody></table>
+      </div>
+
+      <div class="card delivery-signoff">
+        <div><span>Received by</span><span class="signoff-line"></span></div>
+        <div><span>Time</span><span class="signoff-line"></span></div>
+      </div>
     </div>
 
     <div id="payment-modal-wrap"></div>

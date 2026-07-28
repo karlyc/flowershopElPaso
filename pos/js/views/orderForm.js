@@ -100,12 +100,9 @@ export async function renderOrderForm(container, params) {
             <label>Recipient phone<input id="recipientPhone" /></label>
             <label>Address<input id="address" /></label>
             <label>Zip code / city
-              <select id="zip"><option value="">— custom —</option>${zipCodes
-                .map((z) => {
-                  const label = z.type === 'CITY' ? `${z.city}${z.state ? ', ' + z.state : ''}` : z.zip;
-                  return `<option value="${escapeHtml(label)}" data-price="${z.price}">${escapeHtml(label)} — ${money(z.price)}</option>`;
-                })
-                .join('')}</select>
+              <input id="zip-search" placeholder="Search zip or city…" autocomplete="off" />
+              <input type="hidden" id="zip" />
+              <div id="zip-search-results" class="search-results" hidden></div>
             </label>
           </div>
           <div id="delivery-business-only" class="grid-2" hidden>
@@ -223,6 +220,7 @@ export async function renderOrderForm(container, params) {
     document.getElementById('recipientPhone').value = order.recipientPhone || '';
     document.getElementById('address').value = order.address || '';
     document.getElementById('zip').value = order.zip || '';
+    document.getElementById('zip-search').value = order.zip || '';
     document.getElementById('businessName').value = order.businessName || '';
     document.getElementById('businessDept').value = order.businessDept || '';
     document.getElementById('pickupSelf').checked = order.pickupSelf;
@@ -244,6 +242,10 @@ export async function renderOrderForm(container, params) {
   renderAddOnCatalog();
   renderAddOnsTable();
   wireEvents(isEdit, params.id);
+}
+
+function zipLabel(z) {
+  return z.type === 'CITY' ? `${z.city}${z.state ? ', ' + z.state : ''}` : z.zip;
 }
 
 function toggleDeliveryFields() {
@@ -553,9 +555,30 @@ function wireEvents(isEdit, orderId) {
   document.querySelectorAll('input[name="deliveryOption"]').forEach((r) => r.addEventListener('change', toggleDeliveryFields));
   document.getElementById('messageAnon').addEventListener('change', toggleAnonymous);
 
-  document.getElementById('zip').addEventListener('change', (e) => {
-    const opt = e.target.selectedOptions[0];
-    if (opt?.dataset.price) document.getElementById('deliveryFee').value = opt.dataset.price;
+  document.getElementById('zip-search').addEventListener('input', (e) => {
+    const q = e.target.value.trim();
+    document.getElementById('zip').value = q;
+    const results = document.getElementById('zip-search-results');
+    if (!q) {
+      results.hidden = true;
+      return;
+    }
+    const matches = zipCodes.filter((z) => zipLabel(z).toLowerCase().includes(q.toLowerCase()));
+    results.hidden = false;
+    results.innerHTML = matches.length
+      ? matches
+          .map((z) => `<div data-zip-label="${escapeHtml(zipLabel(z))}" data-price="${z.price}">${escapeHtml(zipLabel(z))} — ${money(z.price)}</div>`)
+          .join('')
+      : '<div style="color:var(--text-muted);">No matches — will be saved as a custom zip</div>';
+  });
+
+  document.getElementById('zip-search-results').addEventListener('click', (e) => {
+    const label = e.target.dataset.zipLabel;
+    if (!label) return;
+    document.getElementById('zip-search').value = label;
+    document.getElementById('zip').value = label;
+    document.getElementById('deliveryFee').value = e.target.dataset.price;
+    document.getElementById('zip-search-results').hidden = true;
     updateTotalsPreview();
   });
   document.getElementById('deliveryFee').addEventListener('input', updateTotalsPreview);
