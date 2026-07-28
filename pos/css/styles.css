@@ -526,7 +526,7 @@ tr:hover td { background: var(--surface-sunken); }
 .delivery-confirmation p { margin: 0; }
 .delivery-photo { width: 180px; height: 180px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border); }
 
-.delivery-copy { margin-top: 2rem; padding-top: 2rem; border-top: 2px dashed var(--border); }
+.delivery-copy { display: none; }
 
 .delivery-signoff { display: flex; gap: 2rem; }
 .delivery-signoff > div { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
@@ -543,7 +543,7 @@ tr:hover td { background: var(--surface-sunken); }
   .sidebar, .topbar, .no-print { display: none !important; }
   .content { padding: 0; }
   body { background: #fff; }
-  .delivery-copy { page-break-before: always; border-top: none; padding-top: 0; margin-top: 0; }
+  .delivery-copy { display: block; page-break-before: always; }
 }
 
 @media (max-width: 860px) {
