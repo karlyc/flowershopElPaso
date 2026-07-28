@@ -113,10 +113,7 @@ export async function renderOrderDetail(container, params) {
       <div class="card">
         <h3>Customer</h3>
         <p><a href="#/customers/${order.client.id}">${escapeHtml(order.client.firstName)} ${escapeHtml(order.client.lastName)}</a><br/>
-        ${escapeHtml(order.client.phone)}<br/>
-        <span style="color:var(--text-muted);">Order created ${dateTimeShort(order.createdAt)}</span></p>
-      </div>
-      <div class="card">
+        ${escapeHtml(order.client.phone)}</p>
         <h3>Delivery</h3>
         <p>${dateShort(order.deliveryDate)} — ${escapeHtml(order.deliveryTimeType)} ${escapeHtml(order.deliveryTime)}<br/>
         ${titleCase(order.deliveryOption)}${order.address ? ' — ' + escapeHtml(order.address) : ''}${order.zip ? ', ' + escapeHtml(order.zip) : ''}<br/>
@@ -125,12 +122,11 @@ export async function renderOrderDetail(container, params) {
         ${order.pickupPersonName ? `<br/>Picking up: ${escapeHtml(order.pickupPersonName)}` : ''}
         ${order.deliveryNotes ? `<br/>Notes: ${escapeHtml(order.deliveryNotes)}` : ''}</p>
       </div>
-    </div>
-
-    <div class="card">
-      <h3>Occasion &amp; Message</h3>
-      <p>${titleCase(order.occasion)}</p>
-      <p>${escapeHtml(order.messageText || '—')}<br/>— ${order.messageAnon ? 'Anonymous' : escapeHtml(order.messageFrom || '')}</p>
+      <div class="card">
+        <h3>Occasion &amp; Message</h3>
+        <p>${titleCase(order.occasion)}</p>
+        <p>${escapeHtml(order.messageText || '—')}<br/>— ${order.messageAnon ? 'Anonymous' : escapeHtml(order.messageFrom || '')}</p>
+      </div>
     </div>
 
     <div class="card">
@@ -160,7 +156,6 @@ export async function renderOrderDetail(container, params) {
       <div class="receipt-row"><span>Delivery fee</span><span>${money(order.deliveryFee)}</span></div>
       <div class="receipt-row"><span>Tax</span><span>${money(order.tax)}</span></div>
       <div class="receipt-row" style="font-weight:700;"><span>Total</span><span>${money(order.total)}</span></div>
-      <div class="receipt-row" style="color:var(--text-muted);"><span>Payment type</span><span>${titleCase(order.paymentType)}</span></div>
       ${order.paymentProofUrl ? `<p><a href="${UPLOADS_ORIGIN}${order.paymentProofUrl}" target="_blank">View payment proof</a></p>` : ''}
     </div>
 
