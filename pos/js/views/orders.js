@@ -81,11 +81,135 @@ function debounce(fn, ms) {
   };
 }
 
+function addOnDetail(a) {
+  if (a.kind === 'BANNER') return [a.bannerColor, a.bannerMessage].filter(Boolean).join(' — ');
+  if (a.kind === 'BALLOONS') return a.balloonOccasion || '';
+  return '';
+}
+
+function receiptPrintHeader(shop) {
+  return `
+    <div class="receipt-letterhead">
+      ${shop.logoUrl ? `<img src="${UPLOADS_ORIGIN}${shop.logoUrl}" alt="" />` : ''}
+      <h2>${escapeHtml(shop.name)}</h2>
+      ${shop.address ? `<p>${escapeHtml(shop.address)}</p>` : ''}
+      ${[shop.phone, shop.phone2].filter(Boolean).length ? `<p>${[shop.phone, shop.phone2].filter(Boolean).map(escapeHtml).join(' · ')}</p>` : ''}
+      ${shop.website ? `<p>${escapeHtml(shop.website)}</p>` : ''}
+    </div>`;
+}
+
+function receiptCustomerBlock(order) {
+  return `
+    <div class="receipt-block">
+      <h4>Customer</h4>
+      <p>${escapeHtml(order.client.firstName)} ${escapeHtml(order.client.lastName)} — ${escapeHtml(order.client.phone)}<br/>
+      Order created ${dateTimeShort(order.createdAt)}</p>
+    </div>`;
+}
+
+function receiptDeliveryBlock(order) {
+  const lines = [`${titleCase(order.deliveryOption)}${order.address ? ' — ' + escapeHtml(order.address) : ''}${order.zip ? ', ' + escapeHtml(order.zip) : ''}`];
+  if (order.recipientName) lines.push(`Recipient: ${escapeHtml(order.recipientName)} ${escapeHtml(order.recipientPhone || '')}`);
+  if (order.businessName) lines.push(`Business: ${escapeHtml(order.businessName)} (${escapeHtml(order.businessDept || '')})`);
+  if (order.pickupPersonName) lines.push(`Picking up: ${escapeHtml(order.pickupPersonName)}`);
+  if (order.deliveryNotes) lines.push(`Notes: ${escapeHtml(order.deliveryNotes)}`);
+  return `
+    <div class="receipt-block">
+      <h4>Delivery</h4>
+      <p>${lines.join('<br/>')}<br/>
+      <span class="receipt-delivery-time">${dateShort(order.deliveryDate)} — ${escapeHtml(order.deliveryTimeType)} ${escapeHtml(order.deliveryTime)}</span></p>
+    </div>`;
+}
+
+function receiptMessageBlock(order) {
+  return `
+    <div class="receipt-block">
+      <h4>Occasion &amp; Card Message</h4>
+      <p>${titleCase(order.occasion)}<br/>
+      ${escapeHtml(order.messageText || '—')}<br/>
+      — ${order.messageAnon ? 'Anonymous' : escapeHtml(order.messageFrom || '')}</p>
+    </div>`;
+}
+
+function receiptProductsBlock(order, { pricing }) {
+  if (pricing) {
+    const itemsTable = `
+      <table><thead><tr><th>Item</th><th>Qty</th><th>Unit price</th><th>Notes</th></tr></thead><tbody>
+        ${order.items
+          .map((i) => `<tr><td>${escapeHtml(i.product?.name || i.customName)}</td><td>${i.quantity}</td><td>${money(i.unitPrice)}</td><td>${escapeHtml(i.notes || '')}</td></tr>`)
+          .join('')}
+      </tbody></table>`;
+    const addOnsTable = order.addOns?.length
+      ? `<table style="margin-top:0.5rem;"><thead><tr><th>Add on</th><th>Detail</th><th>Qty</th><th>Price</th></tr></thead><tbody>
+          ${order.addOns.map((a) => `<tr><td>${escapeHtml(a.name)}</td><td>${escapeHtml(addOnDetail(a))}</td><td>${a.quantity}</td><td>${money(a.unitPrice)}</td></tr>`).join('')}
+        </tbody></table>`
+      : '';
+    return `
+      <div class="receipt-block">
+        <h4>Products</h4>
+        ${itemsTable}
+        ${addOnsTable}
+        <div class="receipt-row" style="margin-top:0.6rem;"><span>Subtotal</span><span>${money(order.subtotal)}</span></div>
+        <div class="receipt-row"><span>Delivery fee</span><span>${money(order.deliveryFee)}</span></div>
+        <div class="receipt-row"><span>Tax</span><span>${money(order.tax)}</span></div>
+        <div class="receipt-row" style="font-weight:700;"><span>Total</span><span>${money(order.total)}</span></div>
+        <div class="receipt-row" style="color:var(--text-muted);"><span>Payment type</span><span>${titleCase(order.paymentType)}</span></div>
+      </div>`;
+  }
+  const rows = [
+    ...order.items.map((i) => `<tr><td>${escapeHtml(i.product?.name || i.customName)}</td><td>${i.quantity}</td><td>${escapeHtml(i.notes || '')}</td></tr>`),
+    ...(order.addOns || []).map((a) => `<tr><td>${escapeHtml(a.name)}</td><td>${a.quantity}</td><td>${escapeHtml(addOnDetail(a))}</td></tr>`),
+  ].join('');
+  return `
+    <div class="receipt-block">
+      <h4>Products</h4>
+      <table><thead><tr><th>Item</th><th>Qty</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+}
+
+function receiptReceivedByBox() {
+  return `
+    <div class="receipt-block receipt-received-by">
+      <div><span>Received by</span><div class="fill-line"></div></div>
+      <div><span>Time</span><div class="fill-line"></div></div>
+    </div>`;
+}
+
+function renderPrintReceipt(order, shop) {
+  const fullBlock = () => `
+    <div class="receipt-order-no">Order ${escapeHtml(order.orderNumber)}</div>
+    ${receiptCustomerBlock(order)}
+    ${receiptDeliveryBlock(order)}
+    ${receiptMessageBlock(order)}
+    ${receiptProductsBlock(order, { pricing: true })}
+  `;
+  return `
+    <div class="receipt-print print-only">
+      <section class="receipt-page">
+        ${receiptPrintHeader(shop)}
+        ${fullBlock()}
+      </section>
+      <section class="receipt-page receipt-page-2">
+        <div class="receipt-half">
+          ${fullBlock()}
+        </div>
+        <div class="receipt-half receipt-half-driver">
+          <div class="receipt-order-no">Order ${escapeHtml(order.orderNumber)}</div>
+          ${receiptCustomerBlock(order)}
+          ${receiptDeliveryBlock(order)}
+          ${receiptProductsBlock(order, { pricing: false })}
+          ${receiptReceivedByBox()}
+        </div>
+      </section>
+    </div>`;
+}
+
 export async function renderOrderDetail(container, params) {
   const [order, shop] = await Promise.all([api.get(`/orders/${params.id}`), api.get('/settings')]);
   const canCancel = state.staff.role === 'ADMIN' && order.orderStatus !== 'CANCELLED';
 
   container.innerHTML = `
+    <div class="order-screen-view">
     <div class="receipt-letterhead">
       ${shop.logoUrl ? `<img src="${UPLOADS_ORIGIN}${shop.logoUrl}" alt="" />` : ''}
       <h2>${escapeHtml(shop.name)}</h2>
@@ -113,7 +237,10 @@ export async function renderOrderDetail(container, params) {
       <div class="card">
         <h3>Customer</h3>
         <p><a href="#/customers/${order.client.id}">${escapeHtml(order.client.firstName)} ${escapeHtml(order.client.lastName)}</a><br/>
-        ${escapeHtml(order.client.phone)}</p>
+        ${escapeHtml(order.client.phone)}<br/>
+        <span style="color:var(--text-muted);">Order created ${dateTimeShort(order.createdAt)}</span></p>
+      </div>
+      <div class="card">
         <h3>Delivery</h3>
         <p>${dateShort(order.deliveryDate)} — ${escapeHtml(order.deliveryTimeType)} ${escapeHtml(order.deliveryTime)}<br/>
         ${titleCase(order.deliveryOption)}${order.address ? ' — ' + escapeHtml(order.address) : ''}${order.zip ? ', ' + escapeHtml(order.zip) : ''}<br/>
@@ -122,11 +249,12 @@ export async function renderOrderDetail(container, params) {
         ${order.pickupPersonName ? `<br/>Picking up: ${escapeHtml(order.pickupPersonName)}` : ''}
         ${order.deliveryNotes ? `<br/>Notes: ${escapeHtml(order.deliveryNotes)}` : ''}</p>
       </div>
-      <div class="card">
-        <h3>Occasion &amp; Message</h3>
-        <p>${titleCase(order.occasion)}</p>
-        <p>${escapeHtml(order.messageText || '—')}<br/>— ${order.messageAnon ? 'Anonymous' : escapeHtml(order.messageFrom || '')}</p>
-      </div>
+    </div>
+
+    <div class="card">
+      <h3>Occasion &amp; Message</h3>
+      <p>${titleCase(order.occasion)}</p>
+      <p>${escapeHtml(order.messageText || '—')}<br/>— ${order.messageAnon ? 'Anonymous' : escapeHtml(order.messageFrom || '')}</p>
     </div>
 
     <div class="card">
@@ -156,6 +284,7 @@ export async function renderOrderDetail(container, params) {
       <div class="receipt-row"><span>Delivery fee</span><span>${money(order.deliveryFee)}</span></div>
       <div class="receipt-row"><span>Tax</span><span>${money(order.tax)}</span></div>
       <div class="receipt-row" style="font-weight:700;"><span>Total</span><span>${money(order.total)}</span></div>
+      <div class="receipt-row" style="color:var(--text-muted);"><span>Payment type</span><span>${titleCase(order.paymentType)}</span></div>
       ${order.paymentProofUrl ? `<p><a href="${UPLOADS_ORIGIN}${order.paymentProofUrl}" target="_blank">View payment proof</a></p>` : ''}
     </div>
 
@@ -176,47 +305,16 @@ export async function renderOrderDetail(container, params) {
       }
     </div>
 
-    <div class="delivery-copy">
-      <div class="page-header">
-        <h2>Order ${escapeHtml(order.orderNumber)}</h2>
-      </div>
-
-      <div class="grid-2">
-        <div class="card">
-          <h3>Customer</h3>
-          <p><a href="#/customers/${order.client.id}">${escapeHtml(order.client.firstName)} ${escapeHtml(order.client.lastName)}</a><br/>
-          ${escapeHtml(order.client.phone)}</p>
-        </div>
-        <div class="card">
-          <h3>Delivery</h3>
-          <p>${dateShort(order.deliveryDate)} — ${escapeHtml(order.deliveryTimeType)} ${escapeHtml(order.deliveryTime)}<br/>
-          ${titleCase(order.deliveryOption)}${order.address ? ' — ' + escapeHtml(order.address) : ''}${order.zip ? ', ' + escapeHtml(order.zip) : ''}<br/>
-          ${order.recipientName ? `Recipient: ${escapeHtml(order.recipientName)} ${escapeHtml(order.recipientPhone || '')}` : ''}
-          ${order.businessName ? `<br/>Business: ${escapeHtml(order.businessName)} (${escapeHtml(order.businessDept || '')})` : ''}
-          ${order.pickupPersonName ? `<br/>Picking up: ${escapeHtml(order.pickupPersonName)}` : ''}
-          ${order.deliveryNotes ? `<br/>Notes: ${escapeHtml(order.deliveryNotes)}` : ''}</p>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Products</h3>
-        <table><thead><tr><th>Item</th><th>Qty</th><th>Notes</th></tr></thead><tbody>
-          ${order.items
-            .map((i) => `<tr><td>${escapeHtml(i.product?.name || i.customName)}</td><td>${i.quantity}</td><td>${escapeHtml(i.notes || '')}</td></tr>`)
-            .join('')}
-        </tbody></table>
-      </div>
-
-      <div class="card delivery-signoff">
-        <div><span>Received by</span><span class="signoff-line"></span></div>
-        <div><span>Time</span><span class="signoff-line"></span></div>
-      </div>
+    <div id="payment-modal-wrap"></div>
     </div>
 
-    <div id="payment-modal-wrap"></div>
+    ${renderPrintReceipt(order, shop)}
   `;
 
-  document.getElementById('print-btn').addEventListener('click', () => window.print());
+  document.getElementById('print-btn').addEventListener('click', () => {
+    window.print();
+    if (!order.printedAt) api.patch(`/orders/${order.id}/mark-printed`).catch(() => {});
+  });
   document.getElementById('cancel-btn')?.addEventListener('click', async () => {
     if (!confirm('Cancel this order?')) return;
     await api.del(`/orders/${order.id}`);

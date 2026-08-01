@@ -551,24 +551,45 @@ tr:hover td { background: var(--surface-sunken); }
 .delivery-confirmation p { margin: 0; }
 .delivery-photo { width: 180px; height: 180px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border); }
 
-.delivery-copy { display: none; }
+.print-only { display: none; }
 
-.delivery-signoff { display: flex; gap: 2rem; }
-.delivery-signoff > div { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
-.delivery-signoff span:first-child {
-  color: var(--text-muted);
-  font-weight: var(--weight-bold);
+.receipt-order-no { font-family: var(--font-display); font-size: 1.15rem; font-weight: var(--weight-semibold); margin-bottom: 0.5rem; }
+.receipt-block { margin-bottom: 0.85rem; }
+.receipt-block h4 {
+  margin: 0 0 0.25rem;
   font-size: var(--text-2xs);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
+  color: var(--text-muted);
 }
-.delivery-signoff .signoff-line { border-bottom: 1px solid var(--stone-500); height: 1.75rem; }
+.receipt-block p { margin: 0; }
+.receipt-delivery-time { color: var(--danger); font-weight: var(--weight-bold); }
+
+.receipt-page-2 { display: flex; flex-direction: column; }
+.receipt-half { padding: 0.5rem 0; }
+.receipt-half + .receipt-half { border-top: 1px dashed var(--stone-500); margin-top: 0.75rem; padding-top: 1rem; }
+
+.receipt-received-by { display: flex; gap: 2rem; }
+.receipt-received-by span {
+  display: block;
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+.receipt-received-by .fill-line { border-bottom: 1px solid var(--stone-500); height: 1.5rem; }
+.receipt-received-by > div { flex: 1; }
 
 @media print {
-  .sidebar, .topbar, .no-print { display: none !important; }
+  .sidebar, .topbar, .no-print, .order-screen-view { display: none !important; }
   .content { padding: 0; }
   body { background: #fff; }
-  .delivery-copy { display: block; page-break-before: always; }
+  .card, .grid-2 { break-inside: avoid; }
+  .print-only { display: block; }
+  .receipt-page { page-break-after: always; }
+  .receipt-page:last-child { page-break-after: auto; }
+  .receipt-half { page-break-inside: avoid; }
 }
 
 @media (max-width: 860px) {
