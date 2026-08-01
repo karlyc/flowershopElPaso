@@ -53,7 +53,7 @@ export async function renderOrderList(container) {
     </tr></thead><tbody>
       ${orders
         .map(
-          (o) => `<tr>
+          (o) => `<tr${o.printedAt ? '' : ' class="row-unprinted"'}>
         <td>${escapeHtml(o.orderNumber)}</td>
         <td>${dateShort(o.deliveryDate)}</td>
         <td>${escapeHtml(o.client?.firstName)} ${escapeHtml(o.client?.lastName)}</td>

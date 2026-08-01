@@ -356,6 +356,16 @@ router.patch('/:id/status', requireAuth, async (req, res, next) => {
   }
 });
 
+// PATCH /api/orders/:id/mark-printed
+router.patch('/:id/mark-printed', requireAuth, async (req, res, next) => {
+  try {
+    const order = await prisma.order.update({ where: { id: req.params.id }, data: { printedAt: new Date() } });
+    res.json(order);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/orders/:id/submit-payment — proof photo (+ cash bill breakdown)
 router.post('/:id/submit-payment', requireAuth, uploadPaymentProof.single('proof'), async (req, res, next) => {
   try {

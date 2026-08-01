@@ -416,6 +416,8 @@ th {
   letter-spacing: var(--tracking-wide);
 }
 tr:hover td { background: var(--surface-sunken); }
+.row-unprinted td { background: var(--gold-100); }
+.row-unprinted:hover td { background: var(--gold-300); }
 .table-wrap { overflow-x: auto; }
 
 .badge {
