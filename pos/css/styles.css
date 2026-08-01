@@ -632,6 +632,9 @@ tr:hover td { background: var(--surface-sunken); }
   font-size: var(--text-sm);
 }
 
+.receipt-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-4); }
+.receipt-row-2col .receipt-block { margin-bottom: 0; }
+
 .receipt-page-2 {
   display: flex;
   flex-direction: column;
@@ -696,6 +699,22 @@ tr:hover td { background: var(--surface-sunken); }
   .receipt-page:last-child { page-break-after: auto; }
   .receipt-half { page-break-inside: avoid; }
   .receipt-block { box-shadow: none; }
+
+  /* Page 2 packs two full copies onto one sheet, so it runs noticeably
+     tighter than page 1's single-copy spacing. */
+  .receipt-page-2 .receipt-block { padding: 6px 10px; margin-bottom: 4px; }
+  .receipt-page-2 .receipt-row-2col { gap: 8px; margin-bottom: 4px; }
+  .receipt-page-2 .receipt-block h4 { font-size: 0.72rem; padding-bottom: 3px; margin-bottom: 4px; }
+  .receipt-page-2 .receipt-block p { font-size: 0.7rem; line-height: 1.2; }
+  .receipt-page-2 .receipt-block table,
+  .receipt-page-2 .receipt-block th,
+  .receipt-page-2 .receipt-block td { font-size: 0.65rem; padding: 2px 3px; }
+  .receipt-page-2 .receipt-order-no { font-size: 0.85rem; margin-bottom: 5px; }
+  .receipt-page-2 .receipt-delivery-time { font-size: 0.65rem; padding: 1px 5px; margin-top: 3px; }
+  .receipt-page-2 .receipt-received-by span { font-size: 0.6rem; margin-bottom: 6px; }
+  .receipt-page-2 .receipt-received-by .fill-line { height: 10px; }
+  .receipt-page-2 { gap: 10px; }
+  .receipt-half-driver { padding-top: 10px; }
 }
 
 

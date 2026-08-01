@@ -175,11 +175,18 @@ function receiptReceivedByBox() {
     </div>`;
 }
 
+function receiptCustomerDeliveryRow(order) {
+  return `
+    <div class="receipt-row-2col">
+      ${receiptCustomerBlock(order)}
+      ${receiptDeliveryBlock(order)}
+    </div>`;
+}
+
 function renderPrintReceipt(order, shop) {
   const fullBlock = () => `
     <div class="receipt-order-no">Order ${escapeHtml(order.orderNumber)}</div>
-    ${receiptCustomerBlock(order)}
-    ${receiptDeliveryBlock(order)}
+    ${receiptCustomerDeliveryRow(order)}
     ${receiptMessageBlock(order)}
     ${receiptProductsBlock(order, { pricing: true })}
   `;
@@ -195,8 +202,7 @@ function renderPrintReceipt(order, shop) {
         </div>
         <div class="receipt-half receipt-half-driver">
           <div class="receipt-order-no">Order ${escapeHtml(order.orderNumber)}</div>
-          ${receiptCustomerBlock(order)}
-          ${receiptDeliveryBlock(order)}
+          ${receiptCustomerDeliveryRow(order)}
           ${receiptProductsBlock(order, { pricing: false })}
           ${receiptReceivedByBox()}
         </div>
