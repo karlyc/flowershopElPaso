@@ -130,6 +130,25 @@ window.addEventListener('unhandledrejection', (e) => {
   }
 });
 
+const loginPin = document.getElementById('login-pin');
+
+// Keyboard entry: strip anything non-numeric and cap at 4 digits as the user types/pastes.
+loginPin.addEventListener('input', () => {
+  loginPin.value = loginPin.value.replace(/\D/g, '').slice(0, 4);
+});
+
+// Click entry: the keypad drives the same input so keyboard typing keeps working too.
+document.querySelectorAll('.pin-key').forEach((key) => {
+  key.addEventListener('click', () => {
+    if (key.dataset.action === 'backspace') {
+      loginPin.value = loginPin.value.slice(0, -1);
+    } else if (loginPin.value.length < 4) {
+      loginPin.value += key.dataset.digit;
+    }
+    loginPin.focus();
+  });
+});
+
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const staffId = document.getElementById('login-staff').value;
