@@ -9,6 +9,11 @@ export function dateShort(value) {
   return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
+export function dateLong(value) {
+  if (!value) return '—';
+  return new Date(value).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
 export function dateInput(value) {
   if (!value) return '';
   return new Date(value).toISOString().slice(0, 10);

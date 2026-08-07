@@ -1,6 +1,6 @@
 // js/views/orders.js — Orders list + detail/receipt/payment
 import { api, API_BASE } from '../api.js';
-import { money, dateShort, dateTimeShort, titleCase, escapeHtml } from '../format.js';
+import { money, dateShort, dateLong, dateTimeShort, titleCase, escapeHtml } from '../format.js';
 import { state } from '../state.js';
 
 const UPLOADS_ORIGIN = API_BASE.replace(/\/api\/?$/, '');
@@ -117,13 +117,13 @@ function receiptDeliveryBlock(order) {
     <div class="receipt-block">
       <h4>Delivery</h4>
       <p>${lines.join('<br/>')}<br/>
-      <span class="receipt-delivery-time">${dateShort(order.deliveryDate)} — ${escapeHtml(order.deliveryTimeType)} ${escapeHtml(order.deliveryTime)}</span></p>
+      <span class="receipt-delivery-time">${dateLong(order.deliveryDate)} — ${escapeHtml(order.deliveryTimeType)} ${escapeHtml(order.deliveryTime)}</span></p>
     </div>`;
 }
 
 function receiptMessageBlock(order) {
   return `
-    <div class="receipt-block">
+    <div class="receipt-block receipt-message-block">
       <h4>Occasion &amp; Card Message</h4>
       <p>${titleCase(order.occasion)}<br/>
       ${escapeHtml(order.messageText || '—')}<br/>

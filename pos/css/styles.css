@@ -632,6 +632,10 @@ tr:hover td { background: var(--surface-sunken); }
   font-size: var(--text-sm);
 }
 
+.receipt-message-block { padding: var(--space-3) var(--space-4); }
+.receipt-message-block h4 { margin-bottom: var(--space-2); padding-bottom: var(--space-2); }
+.receipt-message-block p { line-height: 1.4; }
+
 .receipt-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-4); }
 .receipt-row-2col .receipt-block { margin-bottom: 0; }
 
