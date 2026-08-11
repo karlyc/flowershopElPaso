@@ -149,9 +149,9 @@ function receiptProductsBlock(order, { pricing }) {
         <h4>Products</h4>
         ${itemsTable}
         ${addOnsTable}
-        <div class="receipt-row" style="margin-top:0.6rem;"><span>Subtotal</span><span>${money(order.subtotal)}</span></div>
-        <div class="receipt-row"><span>Delivery fee</span><span>${money(order.deliveryFee)}</span></div>
-        <div class="receipt-row"><span>Tax</span><span>${money(order.tax)}</span></div>
+        <div class="receipt-row receipt-row-minor" style="margin-top:0.6rem;"><span>Subtotal</span><span>${money(order.subtotal)}</span></div>
+        <div class="receipt-row receipt-row-minor"><span>Delivery fee</span><span>${money(order.deliveryFee)}</span></div>
+        <div class="receipt-row receipt-row-minor"><span>Tax</span><span>${money(order.tax)}</span></div>
         <div class="receipt-row" style="font-weight:700;"><span>Total</span><span>${money(order.total)}</span></div>
         <div class="receipt-row" style="color:var(--text-muted);"><span>Payment type</span><span>${titleCase(order.paymentType)}</span></div>
       </div>`;

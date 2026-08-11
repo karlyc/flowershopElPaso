@@ -575,6 +575,7 @@ tr:hover td { background: var(--surface-sunken); }
 .receipt-row span:last-child {
   font-variant-numeric: tabular-nums;
 }
+.receipt-row-minor { font-size: var(--text-sm); padding: 2px 0; }
 .receipt-photos img { width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-md); margin-right: 4px; }
 
 .delivery-confirmation { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start; }
@@ -713,6 +714,8 @@ tr:hover td { background: var(--surface-sunken); }
   .receipt-page-2 .receipt-block table,
   .receipt-page-2 .receipt-block th,
   .receipt-page-2 .receipt-block td { font-size: 0.65rem; padding: 2px 3px; }
+  .receipt-page-2 .receipt-row { font-size: 0.7rem; padding: 1px 0; }
+  .receipt-page-2 .receipt-row-minor { font-size: 0.62rem; }
   .receipt-page-2 .receipt-order-no { font-size: 0.85rem; margin-bottom: 5px; }
   .receipt-page-2 .receipt-delivery-time { font-size: 0.65rem; padding: 1px 5px; margin-top: 3px; }
   .receipt-page-2 .receipt-received-by span { font-size: 0.6rem; margin-bottom: 6px; }
