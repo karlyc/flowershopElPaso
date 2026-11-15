@@ -5,6 +5,12 @@ import { state } from '../state.js';
 
 const UPLOADS_ORIGIN = API_BASE.replace(/\/api\/?$/, '');
 
+// The uploaded logo is stored in the DB as a data URL. Older disk paths (/uploads/...)
+// were wiped by redeploys, so anything else falls back to the bundled brand mark.
+function shopLogoSrc(shop) {
+  return shop.logoUrl && shop.logoUrl.startsWith('data:') ? shop.logoUrl : 'assets/logo-karels.png';
+}
+
 const STATUS_BADGE = {
   MAKING_ARRANGEMENT: 'badge-amber',
   PENDING_DELIVERY: 'badge-pink',
@@ -90,7 +96,7 @@ function addOnDetail(a) {
 function receiptPrintHeader(shop) {
   return `
     <div class="receipt-letterhead">
-      ${shop.logoUrl ? `<img src="${UPLOADS_ORIGIN}${shop.logoUrl}" alt="" />` : ''}
+      <img src="${shopLogoSrc(shop)}" alt="" />
       <h2>${escapeHtml(shop.name)}</h2>
       ${shop.address ? `<p>${escapeHtml(shop.address)}</p>` : ''}
       ${[shop.phone, shop.phone2].filter(Boolean).length ? `<p>${[shop.phone, shop.phone2].filter(Boolean).map(escapeHtml).join(' · ')}</p>` : ''}
@@ -217,7 +223,7 @@ export async function renderOrderDetail(container, params) {
   container.innerHTML = `
     <div class="order-screen-view">
     <div class="receipt-letterhead">
-      ${shop.logoUrl ? `<img src="${UPLOADS_ORIGIN}${shop.logoUrl}" alt="" />` : ''}
+      <img src="${shopLogoSrc(shop)}" alt="" />
       <h2>${escapeHtml(shop.name)}</h2>
       ${[shop.phone, shop.phone2].filter(Boolean).length ? `<p>${[shop.phone, shop.phone2].filter(Boolean).map(escapeHtml).join(' · ')}</p>` : ''}
       ${shop.address ? `<p>${escapeHtml(shop.address)}</p>` : ''}

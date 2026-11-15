@@ -27,7 +27,21 @@ function makeUploader(subdir) {
   });
 }
 
+// The shop logo is kept in memory and stored in the database as a data URL, so it
+// survives redeploys (Railway's local disk is wiped on every deploy/restart).
+const uploadLogo = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image uploads are allowed'));
+    }
+    cb(null, true);
+  },
+});
+
 module.exports = {
+  uploadLogo,
   uploadProductPhoto: makeUploader('products'),
   uploadInventoryPhoto: makeUploader('inventory'),
   uploadPaymentProof: makeUploader('payments'),
